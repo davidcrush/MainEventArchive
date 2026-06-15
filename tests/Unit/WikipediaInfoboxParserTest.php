@@ -14,7 +14,7 @@ class WikipediaInfoboxParserTest extends TestCase
     {
         parent::setUp();
 
-        $this->parser = new WikipediaInfoboxParser;
+        $this->parser = app(WikipediaInfoboxParser::class);
     }
 
     public function test_parses_bash_at_the_beach_1996_metadata(): void
@@ -144,6 +144,38 @@ WIKI);
         $this->assertSame('Nassau Veterans Memorial Coliseum', $metadata->venueLinks[0]->pageTitle);
         $this->assertSame('Allstate Arena', $metadata->venueLinks[1]->pageTitle);
         $this->assertSame('Rosemont Horizon', $metadata->venueLinks[1]->displayName);
+    }
+
+    public function test_scopes_infobox_to_event_subsection_on_multi_event_clash_pages(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+===National Wrestling Alliance (Jim Crockett Promotions)===
+====Clash of the Champions I====
+{{Infobox Wrestling event
+|name = Clash of the Champions I
+|venue = [[Greensboro Coliseum]]
+|city = [[Greensboro, North Carolina]]
+|attendance = 6,000
+}}
+====Clash of the Champions V: St. Valentine's Massacre====
+{{Infobox Wrestling event
+|name = Clash of the Champions V
+|venue = [[Cleveland Convention Center (demolished)|Cleveland Convention Center]]
+|city = [[Cleveland|Cleveland, Ohio]]
+|attendance = 5,000
+}}
+WIKI;
+
+        $metadata = $this->parser->parse(
+            $wikitext,
+            'Clash of the Champions V: St. Valentine\'s Massacre',
+            'Clash of the Champions V',
+        );
+
+        $this->assertSame('Cleveland Convention Center', $metadata->venue);
+        $this->assertSame('Cleveland, Ohio', $metadata->city);
+        $this->assertSame(5000, $metadata->attendance);
     }
 
     private function bashAtTheBeach1996Infobox(): string

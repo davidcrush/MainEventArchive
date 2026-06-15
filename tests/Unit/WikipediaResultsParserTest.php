@@ -256,4 +256,34 @@ WIKI;
         );
         $this->assertSame(1, $matches[0]->winnerSide);
     }
+
+    public function test_scopes_results_to_event_subsection_on_multi_event_clash_pages(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+===National Wrestling Alliance (Jim Crockett Promotions)===
+====Clash of the Champions I====
+{{Pro Wrestling results table
+|match1=[[Mike Rotunda]] defeated [[Jimmy Garvin]]
+|stip1=Singles match
+|time1=10:00
+}}
+====Clash of the Champions V: St. Valentine's Massacre====
+{{Pro Wrestling results table
+|match1=[[The Midnight Express (professional wrestling)|The Midnight Express]] ([[Bobby Eaton]] and [[Stan Lane]]) defeated The Russian Assassins
+|stip1=Tag team match
+|time1=12:34
+}}
+WIKI;
+
+        $matches = $this->parser->parse(
+            $wikitext,
+            'Clash of the Champions V: St. Valentine\'s Massacre',
+            'Clash of the Champions V',
+        );
+
+        $this->assertCount(1, $matches);
+        $this->assertSame('The Midnight Express (Bobby Eaton & Stan Lane)', $matches[0]->participants[0]['name']);
+        $this->assertSame('The Russian Assassins', $matches[0]->participants[1]['name']);
+    }
 }

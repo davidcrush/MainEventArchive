@@ -7,15 +7,37 @@ use RuntimeException;
 
 class WikipediaResultsParser
 {
+    public function __construct(
+        private readonly WikipediaEventSectionExtractor $sectionExtractor,
+    ) {}
+
     /**
      * @return list<ParsedWikipediaMatch>
      */
-    public function parse(string $wikitext): array
+    public function parse(string $wikitext, string ...$eventScopeHeadings): array
     {
-        $resultsSection = $this->extractResultsSection($wikitext);
+        $content = $wikitext;
+        $scopeHeadings = array_values(array_unique(array_filter(
+            $eventScopeHeadings,
+            static fn (string $heading): bool => trim($heading) !== '',
+        )));
+
+        if ($scopeHeadings !== []) {
+            $scopedContent = $this->sectionExtractor->extract($wikitext, ...$scopeHeadings);
+
+            if ($scopedContent !== null) {
+                $content = $scopedContent;
+            }
+        }
+
+        $resultsSection = $this->extractResultsSection($content);
 
         if ($resultsSection === null) {
-            throw new RuntimeException('No Results section found on Wikipedia page.');
+            if ($scopeHeadings !== [] && preg_match('/\{\{Pro [Ww]restling results table/i', $content) === 1) {
+                $resultsSection = $content;
+            } else {
+                throw new RuntimeException('No Results section found on Wikipedia page.');
+            }
         }
 
         if (preg_match('/\{\{Pro [Ww]restling results table/i', $resultsSection) === 1) {

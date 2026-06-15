@@ -43,8 +43,8 @@ class WikipediaShowImporter implements ShowDataImporter
         foreach ($shows as $show) {
             try {
                 [$pageTitle, $wikitext] = $this->resolvePageAndWikitext($show);
-                $parsedMatches = $this->resultsParser->parse($wikitext);
-                $metadata = $this->infoboxParser->parse($wikitext);
+                $parsedMatches = $this->resultsParser->parse($wikitext, $pageTitle, $show->title);
+                $metadata = $this->infoboxParser->parse($wikitext, $pageTitle, $show->title);
                 $matchCount = $this->persistMatches($show, $parsedMatches, $pageTitle);
 
                 $updates = [
@@ -103,7 +103,11 @@ class WikipediaShowImporter implements ShowDataImporter
 
     public function linkVenueFromWikitext(Show $show, string $wikitext, bool $refreshVenue = false): ?Venue
     {
-        $metadata = $this->infoboxParser->parse($wikitext);
+        $metadata = $this->infoboxParser->parse(
+            $wikitext,
+            $this->pageTitleResolver->resolve($show),
+            $show->title,
+        );
 
         if (count($metadata->venueLinks) !== 1) {
             return null;
@@ -219,7 +223,7 @@ class WikipediaShowImporter implements ShowDataImporter
         foreach (array_unique($candidates) as $pageTitle) {
             try {
                 $wikitext = $this->client->fetchWikitext($pageTitle);
-                $this->resultsParser->parse($wikitext);
+                $this->resultsParser->parse($wikitext, $pageTitle, $show->title);
 
                 return [$pageTitle, $wikitext];
             } catch (RuntimeException $exception) {

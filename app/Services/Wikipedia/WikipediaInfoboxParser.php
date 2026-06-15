@@ -7,9 +7,27 @@ use App\Data\ParsedWikipediaVenueLink;
 
 class WikipediaInfoboxParser
 {
-    public function parse(string $wikitext): ParsedWikipediaShowMetadata
+    public function __construct(
+        private readonly WikipediaEventSectionExtractor $sectionExtractor,
+    ) {}
+
+    public function parse(string $wikitext, string ...$eventScopeHeadings): ParsedWikipediaShowMetadata
     {
-        $infoboxBody = $this->extractInfoboxBody($wikitext);
+        $content = $wikitext;
+        $scopeHeadings = array_values(array_unique(array_filter(
+            $eventScopeHeadings,
+            static fn (string $heading): bool => trim($heading) !== '',
+        )));
+
+        if ($scopeHeadings !== []) {
+            $scopedContent = $this->sectionExtractor->extract($wikitext, ...$scopeHeadings);
+
+            if ($scopedContent !== null) {
+                $content = $scopedContent;
+            }
+        }
+
+        $infoboxBody = $this->extractInfoboxBody($content);
 
         if ($infoboxBody === null) {
             return new ParsedWikipediaShowMetadata(null, null, null, []);
