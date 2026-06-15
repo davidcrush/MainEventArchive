@@ -20,9 +20,11 @@ interface ShowData {
     title: string;
     slug: string;
     date: string;
+    episode_number?: number | null;
     venue?: string | LinkedVenue | null;
     city?: string | null;
     show_type: string;
+    tv_rating?: number | null;
     promotion?: { name: string; slug: string };
     cagematch_url?: string | null;
     source?: string | null;
@@ -83,6 +85,7 @@ export default function ShowPage({
         renderVenueLabel(show.venue),
         show.city,
         show.show_type.toUpperCase(),
+        show.tv_rating != null ? `TV rating: ${show.tv_rating}` : null,
     ].filter(Boolean);
 
     const showWikidataBadge = show.source === 'wikidata' && show.source_id;
@@ -146,21 +149,23 @@ export default function ShowPage({
                         <SpoilerToggle showSlug={show.slug} initialEnabled={spoilersEnabled} />
                     </Flex>
 
-                    <Box mb={8}>
-                        <Heading size="md" mb={4}>
-                            Match Card
-                        </Heading>
-                        <Box as="ol" display="flex" flexDirection="column" gap={3}>
-                            {(show.matches ?? []).map((match) => (
-                                <MatchRow
-                                    key={match.id}
-                                    match={match}
-                                    spoilersEnabled={spoilersEnabled}
-                                    promotionName={show.promotion?.name}
-                                />
-                            ))}
+                    {(show.matches ?? []).length > 0 ? (
+                        <Box mb={8}>
+                            <Heading size="md" mb={4}>
+                                Match Card
+                            </Heading>
+                            <Box as="ol" display="flex" flexDirection="column" gap={3}>
+                                {(show.matches ?? []).map((match) => (
+                                    <MatchRow
+                                        key={match.id}
+                                        match={match}
+                                        spoilersEnabled={spoilersEnabled}
+                                        promotionName={show.promotion?.name}
+                                    />
+                                ))}
+                            </Box>
                         </Box>
-                    </Box>
+                    ) : null}
 
                     <Box mb={8}>
                         <VideoPlaceholder video={show.video} />

@@ -5,8 +5,10 @@ namespace App\Models;
 use App\Enums\Brand;
 use App\Enums\ShowStatus;
 use App\Enums\ShowType;
+use App\Observers\ShowObserver;
 use Database\Factories\ShowFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,12 +21,14 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'title',
     'slug',
     'date',
+    'episode_number',
     'venue',
     'venue_id',
     'city',
     'show_type',
     'brand',
     'attendance',
+    'tv_rating',
     'status',
     'cagematch_url',
     'source',
@@ -34,6 +38,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'verified_at',
     'verified_by',
 ])]
+#[ObservedBy([ShowObserver::class])]
 class Show extends Model
 {
     /** @use HasFactory<ShowFactory> */
@@ -121,6 +126,7 @@ class Show extends Model
             'show_type' => ShowType::class,
             'brand' => Brand::class,
             'status' => ShowStatus::class,
+            'tv_rating' => 'decimal:1',
             'imported_at' => 'datetime',
             'verified_at' => 'datetime',
         ];

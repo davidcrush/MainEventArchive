@@ -36,12 +36,14 @@ erDiagram
 | title | string | e.g. "Starrcade 1997" |
 | slug | string | unique per promotion or global |
 | date | date | date only, no time |
+| episode_number | int nullable | TV series episode # (e.g. global Nitro # from series premiere) |
 | venue | string | nullable |
 | city | string | nullable |
 | venue_id | FK nullable | linked `venues` row; single-venue shows only (see [wikipedia-venue-parser.md](wikipedia-venue-parser.md)) |
 | show_type | enum | ppv, tv, special, house_show |
 | brand | enum nullable | raw, smackdown — unused until WWE v1.3 |
 | attendance | int nullable | |
+| tv_rating | decimal nullable | Nielsen/TNT household rating when known (TV shows) |
 | status | enum | draft, pending_review, published |
 | cagematch_url | string nullable | link-out only |
 | source | string nullable | wikidata, wikipedia, manual |

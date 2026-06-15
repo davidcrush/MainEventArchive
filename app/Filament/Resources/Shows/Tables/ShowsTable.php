@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Shows\Tables;
 
 use App\Enums\ShowStatus;
+use App\Enums\ShowType;
 use App\Filament\Resources\Shows\Actions\PublishShowAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -26,6 +27,13 @@ class ShowsTable
                 TextColumn::make('date')
                     ->date()
                     ->sortable(),
+                TextColumn::make('show_type')
+                    ->badge()
+                    ->sortable(),
+                TextColumn::make('episode_number')
+                    ->label('Episode #')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('city')
                     ->toggleable(),
                 TextColumn::make('status')
@@ -42,6 +50,18 @@ class ShowsTable
             ->filters([
                 SelectFilter::make('status')
                     ->options(ShowStatus::class),
+                SelectFilter::make('show_type')
+                    ->options(ShowType::class),
+                SelectFilter::make('series')
+                    ->options([
+                        'nitro' => 'WCW Monday Nitro',
+                        'clash' => 'Clash of the Champions',
+                    ])
+                    ->query(fn ($query, array $data) => match ($data['value'] ?? null) {
+                        'nitro' => $query->where('title', 'like', 'WCW Monday Nitro%'),
+                        'clash' => $query->where('title', 'like', 'Clash of the Champions%'),
+                        default => $query,
+                    }),
                 SelectFilter::make('review_queue')
                     ->label('Review queue')
                     ->options([

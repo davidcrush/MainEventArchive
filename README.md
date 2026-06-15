@@ -97,6 +97,16 @@ vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=
 
 Browse Clash shows with **Show Type: TV** on `/browse`. Match timestamps are entered manually in Filament (v1.1).
 
+**WCW Monday Nitro (1996)** — weekly TV (`show_type = tv`); no Wikipedia episode list or match cards in v1. Seed curated catalog, enrich Nielsen ratings from Wikipedia notable episodes, then sync YouTube:
+
+```bash
+vendor/bin/sail artisan db:seed --class=WcwNitroCatalogSeeder
+vendor/bin/sail artisan shows:import-nitro-metadata
+vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=wcw_nitro --dry-run
+```
+
+Browse Nitro with **Show Type: TV** on `/browse`. Staff publish in Filament after review. Re-run YouTube sync as WCW uploads more full episodes.
+
 **2. Match cards (Wikipedia)** — enriches existing shows with participants and results. Run after step 1 (or the fallback seeder):
 
 ```bash

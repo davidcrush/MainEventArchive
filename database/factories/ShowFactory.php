@@ -80,4 +80,25 @@ class ShowFactory extends Factory
             ];
         });
     }
+
+    public function nitroEpisode(int $episodeNumber = 37): static
+    {
+        return $this->state(function () use ($episodeNumber): array {
+            $title = "WCW Monday Nitro #{$episodeNumber}";
+            $date = '1996-09-09';
+
+            return [
+                'title' => $title,
+                'slug' => app(ShowSlugGenerator::class)->generate($title, Carbon::parse($date)),
+                'date' => $date,
+                'show_type' => ShowType::Tv,
+                'episode_number' => $episodeNumber,
+                'status' => ShowStatus::PendingReview,
+                'verified_at' => null,
+                'verified_by' => null,
+                'imported_at' => now(),
+                'source' => 'curated',
+            ];
+        });
+    }
 }

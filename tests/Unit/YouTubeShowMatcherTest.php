@@ -186,4 +186,35 @@ class YouTubeShowMatcherTest extends TestCase
         $this->assertCount(1, $result['links']);
         $this->assertSame('Clash of the Champions XII', $result['links'][0]->show->title);
     }
+
+    public function test_matches_nitro_show_by_air_date_in_full_episode_title(): void
+    {
+        $promotion = Promotion::factory()->wcw()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'WCW Monday Nitro #37',
+            'date' => '1996-05-27',
+            'episode_number' => 37,
+            'show_type' => ShowType::Tv,
+        ]);
+
+        $matcher = new YouTubeShowMatcher(
+            new YouTubeTitleParser,
+            new CagematchCatalogTitleNormalizer,
+            new CatalogTitleMatcher,
+        );
+
+        $result = $matcher->matchNitro($promotion, [
+            new YouTubePlaylistEntry(
+                'fSqqpe7BzNk',
+                'FULL EPISODE: Scott Hall declares war on WCW: WCW Monday Nitro, May 27, 1996',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('WCW Monday Nitro #37', $result['links'][0]->show->title);
+        $this->assertSame([], $result['ambiguous']);
+        $this->assertSame([], $result['unmatchedEntries']);
+    }
 }

@@ -17,9 +17,11 @@ class ShowResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'date' => $this->date->toDateString(),
+            'episode_number' => $this->episode_number,
             'venue' => $this->resolveVenueForResponse(),
             'city' => $this->city,
             'show_type' => $this->show_type->value,
+            'tv_rating' => $this->tv_rating !== null ? (float) $this->tv_rating : null,
             'promotion' => $this->whenLoaded('promotion', fn () => [
                 'id' => $this->promotion->id,
                 'name' => $this->promotion->name,

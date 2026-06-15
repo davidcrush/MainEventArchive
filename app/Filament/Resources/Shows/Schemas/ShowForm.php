@@ -28,6 +28,10 @@ class ShowForm
                     ->disabledOn('edit'),
                 DatePicker::make('date')
                     ->required(),
+                TextInput::make('episode_number')
+                    ->numeric()
+                    ->minValue(1)
+                    ->label('Episode number'),
                 TextInput::make('venue')
                     ->maxLength(255),
                 TextInput::make('city')
@@ -39,6 +43,12 @@ class ShowForm
                     ->options(Brand::class),
                 TextInput::make('attendance')
                     ->numeric(),
+                TextInput::make('tv_rating')
+                    ->numeric()
+                    ->step(0.1)
+                    ->minValue(0)
+                    ->maxValue(99.9)
+                    ->label('TV rating (Nielsen)'),
                 Select::make('status')
                     ->options(ShowStatus::class)
                     ->required(),

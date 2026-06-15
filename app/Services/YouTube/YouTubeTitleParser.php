@@ -2,6 +2,10 @@
 
 namespace App\Services\YouTube;
 
+use Carbon\CarbonInterface;
+use Carbon\Exceptions\InvalidFormatException;
+use Illuminate\Support\Carbon;
+
 class YouTubeTitleParser
 {
     /**
@@ -46,5 +50,38 @@ class YouTubeTitleParser
     public function isFullEventTitle(string $youtubeTitle): bool
     {
         return preg_match('/^FULL EVENT:\s*/i', trim($youtubeTitle)) === 1;
+    }
+
+    public function isFullEpisodeTitle(string $youtubeTitle): bool
+    {
+        return preg_match('/^FULL EPISODE:\s*/i', trim($youtubeTitle)) === 1;
+    }
+
+    public function isSyncableTitle(string $youtubeTitle, bool $includeFullEpisodes = false): bool
+    {
+        if ($this->isFullEventTitle($youtubeTitle)) {
+            return true;
+        }
+
+        return $includeFullEpisodes && $this->isFullEpisodeTitle($youtubeTitle);
+    }
+
+    public function parseNitroAirDate(string $youtubeTitle): ?CarbonInterface
+    {
+        if (! $this->isFullEpisodeTitle($youtubeTitle)) {
+            return null;
+        }
+
+        $title = html_entity_decode(trim($youtubeTitle), ENT_QUOTES | ENT_HTML5);
+
+        if (preg_match('/WCW Monday Nitro,\s*([A-Za-z]+\.?\s+\d{1,2},\s+(?:19|20)\d{2})/i', $title, $matches) !== 1) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse(trim($matches[1]));
+        } catch (InvalidFormatException) {
+            return null;
+        }
     }
 }

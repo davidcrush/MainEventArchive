@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ShowCardResource;
 use App\Models\Promotion;
 use App\Models\Show;
+use App\Services\BrowseCache;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,9 +19,7 @@ class BrowseController extends Controller
         $showType = $request->string('show_type', 'ppv')->toString();
         $watchable = $request->boolean('watchable');
 
-        $cacheKey = "browse.{$promotionSlug}.{$showType}.".($year ?? 'all').'.'.($watchable ? 'watchable' : 'all');
-
-        $shows = Cache::remember($cacheKey, 300, function () use ($promotionSlug, $year, $showType, $watchable) {
+        $shows = BrowseCache::rememberBrowse($promotionSlug, $showType, $year, $watchable, function () use ($promotionSlug, $year, $showType, $watchable) {
             $query = Show::query()
                 ->published()
                 ->with('promotion')

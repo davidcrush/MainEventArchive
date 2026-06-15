@@ -51,7 +51,8 @@ class SyncYouTubePlaylistCommand extends Command
         }
 
         try {
-            $entries = $this->collectEntries($client, $htmlParser, $source, $playlistId);
+            $includeFullEpisodes = $playlistKey === 'wcw_nitro';
+            $entries = $this->collectEntries($client, $htmlParser, $source, $playlistId, $includeFullEpisodes);
         } catch (RuntimeException $exception) {
             $this->error($exception->getMessage());
 
@@ -71,8 +72,10 @@ class SyncYouTubePlaylistCommand extends Command
             $source,
         ));
 
-        $showType = $playlistKey === 'wcw_clash' ? ShowType::Tv : ShowType::Ppv;
-        $result = $matcher->match($promotion, $entries, $showType);
+        $showType = in_array($playlistKey, ['wcw_clash', 'wcw_nitro'], true) ? ShowType::Tv : ShowType::Ppv;
+        $result = $playlistKey === 'wcw_nitro'
+            ? $matcher->matchNitro($promotion, $entries)
+            : $matcher->match($promotion, $entries, $showType);
 
         $created = 0;
         $updated = 0;
@@ -149,6 +152,7 @@ class SyncYouTubePlaylistCommand extends Command
         YouTubeSavedHtmlParser $htmlParser,
         string $source,
         string $playlistId,
+        bool $includeFullEpisodes = false,
     ): array {
         if ($source === 'html') {
             $htmlPath = $this->option('html');
@@ -161,13 +165,13 @@ class SyncYouTubePlaylistCommand extends Command
                 throw new RuntimeException("HTML file is not readable: [{$htmlPath}]");
             }
 
-            return $htmlParser->parse(file_get_contents($htmlPath) ?: '');
+            return $htmlParser->parse(file_get_contents($htmlPath) ?: '', $includeFullEpisodes);
         }
 
         if ($source !== 'api') {
             throw new RuntimeException("Unsupported source [{$source}]. Use api or html.");
         }
 
-        return $client->fetchPlaylistItems($playlistId);
+        return $client->fetchPlaylistItems($playlistId, $includeFullEpisodes);
     }
 }

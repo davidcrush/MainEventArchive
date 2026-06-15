@@ -13,7 +13,7 @@ class YouTubeSavedHtmlParser
     /**
      * @return list<YouTubePlaylistEntry>
      */
-    public function parse(string $html): array
+    public function parse(string $html, bool $includeFullEpisodes = false): array
     {
         $pattern = '/id="video-title"[^>]+title="([^"]+)"[^>]+href="https:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/';
 
@@ -27,7 +27,7 @@ class YouTubeSavedHtmlParser
             $title = html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5);
             $videoId = $match[2];
 
-            if (! $this->titleParser->isFullEventTitle($title)) {
+            if (! $this->titleParser->isSyncableTitle($title, $includeFullEpisodes)) {
                 continue;
             }
 

@@ -15,7 +15,7 @@ class YouTubePlaylistClient
     /**
      * @return list<YouTubePlaylistEntry>
      */
-    public function fetchPlaylistItems(string $playlistId): array
+    public function fetchPlaylistItems(string $playlistId, bool $includeFullEpisodes = false): array
     {
         $apiKey = config('youtube.api_key');
 
@@ -59,7 +59,7 @@ class YouTubePlaylistClient
                     continue;
                 }
 
-                if (! $this->titleParser->isFullEventTitle($title)) {
+                if (! $this->titleParser->isSyncableTitle($title, $includeFullEpisodes)) {
                     continue;
                 }
 

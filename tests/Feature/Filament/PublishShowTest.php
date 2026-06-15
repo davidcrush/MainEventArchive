@@ -3,10 +3,14 @@
 namespace Tests\Feature\Filament;
 
 use App\Enums\ShowStatus;
+use App\Enums\ShowType;
+use App\Filament\Resources\Shows\Actions\PublishShowAction;
 use App\Filament\Resources\Shows\Pages\EditShow;
+use App\Models\Promotion;
 use App\Models\Show;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -41,5 +45,33 @@ class PublishShowTest extends TestCase
 
         Livewire::test(EditShow::class, ['record' => $show->getKey()])
             ->assertActionHidden('publish');
+    }
+
+    public function test_publishing_invalidates_browse_cache(): void
+    {
+        Cache::flush();
+
+        $promotion = Promotion::factory()->wcw()->create();
+        $show = Show::factory()->pendingReview()->create([
+            'promotion_id' => $promotion->id,
+            'show_type' => ShowType::Ppv,
+            'date' => '1997-12-28',
+        ]);
+
+        $this->get(route('browse'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('shows', 0));
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        PublishShowAction::publish($show);
+
+        $this->get(route('browse'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('shows', 1)
+                ->where('shows.0.slug', $show->slug),
+            );
     }
 }
