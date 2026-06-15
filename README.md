@@ -93,7 +93,7 @@ Then enrich with Wikipedia using `--from=1983 --to=1990` (see steps 2–3 below)
 
 ```bash
 vendor/bin/sail artisan db:seed --class=WcwClashCatalogSeeder
-vendor/bin/sail artisan shows:import wikipedia --from=1989 --to=1997
+vendor/bin/sail artisan shows:import wikipedia --promotion=wcw --from=1989 --to=1997
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=wcw_clash --dry-run
 ```
 
@@ -109,14 +109,23 @@ vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=
 
 Browse Nitro with **Show Type: TV** on `/browse`. Staff publish in Filament after review. Re-run YouTube sync as WCW uploads more full episodes.
 
-**2. Match cards (Wikipedia)** — enriches existing shows with participants and results. Run after step 1 (or the fallback seeder):
+**WWE PPVs (1996–2001)** — promotion slug `wwe` (**World Wrestling Entertainment**). Seed from bundled Cagematch HTML, then Wikipedia:
+
+```bash
+vendor/bin/sail artisan db:seed --class=WwePpvCatalogSeeder
+vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=1996 --to=2001
+```
+
+Browse at `/browse?promotion=wwe`. See [docs/domain/initial-catalog-seeding.md](docs/domain/initial-catalog-seeding.md).
+
+**2. Match cards (Wikipedia)** — enriches existing shows with participants and results. Run after step 1 (or the fallback seeder). Bulk import requires `--promotion`:
 
 ```bash
 # One show by slug
 vendor/bin/sail artisan shows:import wikipedia starrcade-1996
 
-# All shows in a year range
-vendor/bin/sail artisan shows:import wikipedia --from=1993 --to=1996
+# All WCW PPVs in a year range
+vendor/bin/sail artisan shows:import wikipedia --promotion=wcw --from=1993 --to=2001
 ```
 
 Wikipedia import replaces all matches on a show when re-run. Parser edge cases are documented in [docs/domain/wikipedia-parser.md](docs/domain/wikipedia-parser.md).

@@ -30,4 +30,12 @@ class PromotionFactory extends Factory
             'slug' => 'wcw',
         ]);
     }
+
+    public function wwe(): static
+    {
+        return $this->state(fn (): array => [
+            'name' => 'World Wrestling Entertainment',
+            'slug' => 'wwe',
+        ]);
+    }
 }

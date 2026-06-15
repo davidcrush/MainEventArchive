@@ -28,6 +28,10 @@ class WikipediaPageTitleResolver
             $candidates[] = "{$name} ({$year})";
             $candidates[] = "The {$name} ({$year})";
 
+            if (preg_match('/^In Your House (\d+): (.+)$/', $name, $inYourHouseMatches) === 1) {
+                $candidates[] = "In Your House {$inYourHouseMatches[1]}: {$inYourHouseMatches[2]} ({$year})";
+            }
+
             if (strcasecmp($name, 'Fall Brawl') === 0) {
                 $candidates[] = "Fall Brawl '{$shortYear}: War Games";
             }
@@ -104,6 +108,7 @@ class WikipediaPageTitleResolver
         return [
             database_path('seeders/data/wcw_pre1990_ppvs.php'),
             database_path('seeders/data/wcw_clash_catalog.php'),
+            database_path('seeders/data/wwe_ppv_overrides.php'),
         ];
     }
 }

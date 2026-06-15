@@ -14,7 +14,8 @@ class ImportShowsCommand extends Command
                             {source=wikidata : Import source (wikidata, wikipedia)}
                             {identifier? : Wikidata QID, Wikipedia page title, or show slug}
                             {--from=1993 : Start year (inclusive)}
-                            {--to=1996 : End year (inclusive)}';
+                            {--to=1996 : End year (inclusive)}
+                            {--promotion= : Promotion slug filter (required for wikipedia bulk import)}';
 
     protected $description = 'Import wrestling shows from external data sources';
 
@@ -38,11 +39,19 @@ class ImportShowsCommand extends Command
         }
 
         $identifier = $this->argument('identifier');
+        $promotionSlug = $this->option('promotion');
+
+        if ($source === 'wikipedia' && $identifier === null && blank($promotionSlug)) {
+            $this->error('Bulk Wikipedia import requires --promotion (e.g. --promotion=wcw or --promotion=wwe).');
+
+            return self::FAILURE;
+        }
 
         if ($source === 'wikipedia') {
+            $promotionLabel = filled($promotionSlug) ? strtoupper((string) $promotionSlug) : 'all promotions';
             $this->info($identifier
                 ? "Enriching show card from Wikipedia page [{$identifier}]..."
-                : "Enriching show cards from Wikipedia ({$fromYear}-{$toYear})...");
+                : "Enriching {$promotionLabel} show cards from Wikipedia ({$fromYear}-{$toYear})...");
             $importer = app(WikipediaShowImporter::class);
         } else {
             $this->info("Importing WCW shows from Wikidata ({$fromYear}-{$toYear})...");
@@ -55,6 +64,7 @@ class ImportShowsCommand extends Command
             fromYear: $fromYear,
             toYear: $toYear,
             identifier: $identifier,
+            promotionSlug: filled($promotionSlug) ? (string) $promotionSlug : null,
         ));
 
         $this->table(

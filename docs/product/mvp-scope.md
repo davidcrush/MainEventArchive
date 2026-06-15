@@ -8,7 +8,7 @@ Incremental catalog expansion first; **video playback at v1.6**.
 |---------|-------|-------------------|
 | **v1** | WCW PPVs, 1993 forward | Browse, search, spoilers, MEA ratings, watchlist, watched |
 | **v1.1** | WCW pre-1993 PPVs + Clash of the Champions | Match timestamp **admin entry** (not user-facing until v1.6) |
-| **v1.2** | WWE PPVs pre-2001 | No brand split |
+| **v1.2** | WWE PPVs 1996–2001 (initial); expand toward pre-2001 | Promotion `wwe`; modern WWE branding; no brand split |
 | **v1.3** | WWE PPVs with brand split | Raw/SmackDown on shows (2002+ era) |
 | **v1.4** | WCW TV — Nitro only | Weekly volume; consider year sub-scope |
 | **v1.5** | WWE TV — Raw and SmackDown only | Brand-aware TV |

@@ -197,6 +197,10 @@ class WikipediaShowImporter implements ShowDataImporter
         }
 
         return Show::query()
+            ->when($request->promotionSlug !== null, fn ($query) => $query->whereHas(
+                'promotion',
+                fn ($promotionQuery) => $promotionQuery->where('slug', $request->promotionSlug),
+            ))
             ->whereBetween('date', [
                 "{$request->fromYear}-01-01",
                 "{$request->toYear}-12-31",
@@ -206,15 +210,36 @@ class WikipediaShowImporter implements ShowDataImporter
     }
 
     /**
+     * @return list<string>
+     */
+    private function wikipediaSearchSuffixes(Show $show): array
+    {
+        $show->loadMissing('promotion');
+
+        $slug = $show->promotion?->slug;
+
+        if ($slug === null) {
+            return ['WCW'];
+        }
+
+        /** @var list<string> $suffixes */
+        $suffixes = config("promotions.{$slug}.wikipedia_search_suffixes", []);
+
+        return $suffixes !== [] ? $suffixes : ['WCW'];
+    }
+
+    /**
      * @return array{0: string, 1: string}
      */
     private function resolvePageAndWikitext(Show $show): array
     {
         $candidates = $this->pageTitleResolver->candidates($show);
 
-        foreach ($this->client->searchPageTitles("{$show->title} WCW") as $searchTitle) {
-            if (! in_array($searchTitle, $candidates, true)) {
-                $candidates[] = $searchTitle;
+        foreach ($this->wikipediaSearchSuffixes($show) as $suffix) {
+            foreach ($this->client->searchPageTitles("{$show->title} {$suffix}") as $searchTitle) {
+                if (! in_array($searchTitle, $candidates, true)) {
+                    $candidates[] = $searchTitle;
+                }
             }
         }
 

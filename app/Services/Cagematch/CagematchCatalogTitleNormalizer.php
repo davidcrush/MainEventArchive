@@ -9,7 +9,7 @@ class CagematchCatalogTitleNormalizer
     public function normalize(string $cagematchTitle, CarbonInterface $date): string
     {
         $title = html_entity_decode($cagematchTitle, ENT_QUOTES | ENT_HTML5);
-        $title = preg_replace('/^(NWA|WCW\/nWo|WCW|AAA|nWo)\s+/i', '', $title) ?? $title;
+        $title = preg_replace('/^(NWA|WCW\/nWo|WCW|AAA|nWo|WWF|WWE)\s+/i', '', $title) ?? $title;
         $title = preg_replace('/\s+-\s+.*$/', '', $title) ?? $title;
         $title = trim($title, " \t\n\r\"'");
         $title = $this->normalizeClashTitle($title);

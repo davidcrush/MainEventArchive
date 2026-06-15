@@ -9,5 +9,6 @@ class ImportRequest
         public readonly int $fromYear,
         public readonly int $toYear,
         public readonly ?string $identifier = null,
+        public readonly ?string $promotionSlug = null,
     ) {}
 }

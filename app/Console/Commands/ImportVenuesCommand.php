@@ -12,6 +12,7 @@ class ImportVenuesCommand extends Command
     protected $signature = 'shows:import-venues
                             {--from=1993 : Start year inclusive}
                             {--to=2001 : End year inclusive}
+                            {--promotion= : Promotion slug filter}
                             {--slug= : Optional single show slug}
                             {--force : Re-fetch Wikipedia metadata for venues already linked}';
 
@@ -32,6 +33,10 @@ class ImportVenuesCommand extends Command
 
         $shows = Show::query()
             ->whereBetween('date', ["{$fromYear}-01-01", "{$toYear}-12-31"])
+            ->when(filled($this->option('promotion')), fn ($query) => $query->whereHas(
+                'promotion',
+                fn ($promotionQuery) => $promotionQuery->where('slug', $this->option('promotion')),
+            ))
             ->when(! $force, fn ($query) => $query->whereNull('venue_id'))
             ->when(is_string($slug) && $slug !== '', fn ($query) => $query->where('slug', $slug))
             ->whereNotNull('venue')
