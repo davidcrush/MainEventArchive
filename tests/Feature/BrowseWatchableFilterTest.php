@@ -1,0 +1,123 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\ShowStatus;
+use App\Enums\ShowType;
+use App\Models\Promotion;
+use App\Models\Show;
+use App\Models\Video;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Tests\TestCase;
+
+class BrowseWatchableFilterTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private ?Promotion $promotion = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::flush();
+    }
+
+    public function test_show_card_resource_includes_has_video_when_full_show_video_exists(): void
+    {
+        $showWithVideo = $this->createPublishedShow(['title' => 'Starrcade 1997', 'slug' => 'starrcade-1997']);
+        $showWithoutVideo = $this->createPublishedShow(['title' => 'Halloween Havoc 1998', 'slug' => 'halloween-havoc-1998']);
+
+        Video::factory()->create([
+            'show_id' => $showWithVideo->id,
+            'match_id' => null,
+        ]);
+
+        $this->get(route('browse'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Browse/Index')
+                ->has('shows', 2)
+                ->where('shows', fn ($shows) => collect($shows)->contains(
+                    fn ($show) => $show['slug'] === $showWithVideo->slug && $show['has_video'] === true,
+                ))
+                ->where('shows', fn ($shows) => collect($shows)->contains(
+                    fn ($show) => $show['slug'] === $showWithoutVideo->slug && $show['has_video'] === false,
+                )),
+            );
+    }
+
+    public function test_browse_without_filter_returns_shows_with_and_without_video(): void
+    {
+        $showWithVideo = $this->createPublishedShow(['title' => 'Great American Bash 1990', 'slug' => 'great-american-bash-1990']);
+        $showWithoutVideo = $this->createPublishedShow(['title' => 'Bash at the Beach 1994', 'slug' => 'bash-at-the-beach-1994']);
+
+        Video::factory()->create([
+            'show_id' => $showWithVideo->id,
+            'match_id' => null,
+        ]);
+
+        $this->get(route('browse'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Browse/Index')
+                ->where('filters.watchable', false)
+                ->has('shows', 2)
+                ->where('shows', fn ($shows) => collect($shows)->pluck('slug')->sort()->values()->all() === collect([
+                    $showWithVideo->slug,
+                    $showWithoutVideo->slug,
+                ])->sort()->values()->all()),
+            );
+    }
+
+    public function test_browse_with_watchable_filter_returns_only_shows_with_full_show_video(): void
+    {
+        $showWithVideo = $this->createPublishedShow(['title' => 'Starrcade 1996', 'slug' => 'starrcade-1996']);
+        $showWithoutVideo = $this->createPublishedShow(['title' => 'Uncensored 1996', 'slug' => 'uncensored-1996']);
+
+        Video::factory()->create([
+            'show_id' => $showWithVideo->id,
+            'match_id' => null,
+        ]);
+
+        $this->get(route('browse', ['watchable' => 1]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Browse/Index')
+                ->where('filters.watchable', true)
+                ->has('shows', 1)
+                ->where('shows.0.slug', $showWithVideo->slug)
+                ->where('shows.0.has_video', true),
+            );
+    }
+
+    public function test_browse_with_watchable_filter_excludes_shows_without_videos(): void
+    {
+        $showWithoutVideo = $this->createPublishedShow(['title' => 'Fall Brawl 1999', 'slug' => 'fall-brawl-1999']);
+
+        $this->get(route('browse', ['watchable' => 1]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Browse/Index')
+                ->has('shows', 0),
+            );
+
+        $this->assertDatabaseHas('shows', ['id' => $showWithoutVideo->id]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function createPublishedShow(array $attributes = []): Show
+    {
+        $this->promotion ??= Promotion::factory()->wcw()->create();
+
+        return Show::factory()->create(array_merge([
+            'promotion_id' => $this->promotion->id,
+            'status' => ShowStatus::Published,
+            'show_type' => ShowType::Ppv,
+            'date' => '1997-12-28',
+        ], $attributes));
+    }
+}

@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Filament\Resources\Shows\Tables;
+
+use App\Enums\ShowStatus;
+use App\Filament\Resources\Shows\Actions\PublishShowAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+
+class ShowsTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->defaultSort('date', 'desc')
+            ->columns([
+                TextColumn::make('title')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('promotion.name')
+                    ->sortable(),
+                TextColumn::make('date')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('city')
+                    ->toggleable(),
+                TextColumn::make('status')
+                    ->badge()
+                    ->sortable(),
+                TextColumn::make('source')
+                    ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('imported_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                SelectFilter::make('status')
+                    ->options(ShowStatus::class),
+                SelectFilter::make('review_queue')
+                    ->label('Review queue')
+                    ->options([
+                        'pending' => 'Pending review',
+                    ])
+                    ->query(fn ($query, array $data) => $query->when(
+                        ($data['value'] ?? null) === 'pending',
+                        fn ($q) => $q->where('status', ShowStatus::PendingReview),
+                    )),
+            ])
+            ->recordActions([
+                EditAction::make(),
+                PublishShowAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+}

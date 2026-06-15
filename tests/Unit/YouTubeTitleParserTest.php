@@ -1,0 +1,54 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Services\YouTube\YouTubeTitleParser;
+use PHPUnit\Framework\TestCase;
+
+class YouTubeTitleParserTest extends TestCase
+{
+    private YouTubeTitleParser $parser;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->parser = new YouTubeTitleParser;
+    }
+
+    public function test_parses_full_event_title_with_year(): void
+    {
+        $parsed = $this->parser->parse(
+            'FULL EVENT: WCW Halloween Havoc 1998 – Goldberg vs. DDP, Hogan vs. Warrior 2 and more!',
+        );
+
+        $this->assertSame('Halloween Havoc 1998', $parsed['eventTitle']);
+        $this->assertSame(1998, $parsed['year']);
+    }
+
+    public function test_parses_full_event_title_with_pipe_separator(): void
+    {
+        $parsed = $this->parser->parse(
+            'FULL EVENT: WCW SuperBrawl V | Hulk Hogan vs. Vader, Sting & Savage vs. Big Bubba & Avalanche',
+        );
+
+        $this->assertSame('SuperBrawl V', $parsed['eventTitle']);
+        $this->assertNull($parsed['year']);
+    }
+
+    public function test_parses_great_american_bash_with_year(): void
+    {
+        $parsed = $this->parser->parse(
+            'FULL EVENT: WCW Great American Bash 1990 | Sting vs. Ric Flair; Vader debuts',
+        );
+
+        $this->assertSame('Great American Bash 1990', $parsed['eventTitle']);
+        $this->assertSame(1990, $parsed['year']);
+    }
+
+    public function test_identifies_full_event_prefix(): void
+    {
+        $this->assertTrue($this->parser->isFullEventTitle('FULL EVENT: WCW Fall Brawl 1995 | WarGames'));
+        $this->assertFalse($this->parser->isFullEventTitle('FULL EPISODE: WCW Monday Nitro, Feb. 9, 1998'));
+    }
+}

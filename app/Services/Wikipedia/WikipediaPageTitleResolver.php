@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Services\Wikipedia;
+
+use App\Models\Show;
+use Illuminate\Support\Str;
+
+class WikipediaPageTitleResolver
+{
+    /**
+     * @return list<string>
+     */
+    public function candidates(Show $show): array
+    {
+        $candidates = [];
+
+        $override = $this->wikipediaPageTitleOverride($show->title);
+
+        if ($override !== null) {
+            $candidates[] = $override;
+        }
+
+        if (preg_match('/^(.+?)\s+(\d{4})$/', $show->title, $matches) === 1) {
+            $name = trim($matches[1]);
+            $year = $matches[2];
+            $shortYear = substr($year, 2);
+
+            $candidates[] = "{$name} ({$year})";
+            $candidates[] = "The {$name} ({$year})";
+
+            if (strcasecmp($name, 'Fall Brawl') === 0) {
+                $candidates[] = "Fall Brawl '{$shortYear}: War Games";
+            }
+
+            $candidates[] = $show->title;
+        } else {
+            $candidates[] = $show->title;
+        }
+
+        return array_values(array_unique($candidates));
+    }
+
+    public function resolve(Show $show, ?string $identifier = null): string
+    {
+        if ($identifier !== null && $identifier !== '') {
+            return $this->normalizePageTitle($identifier);
+        }
+
+        return $this->candidates($show)[0];
+    }
+
+    private function normalizePageTitle(string $value): string
+    {
+        if (Str::contains($value, '_') && ! Str::contains($value, ' ')) {
+            return str_replace('_', ' ', $value);
+        }
+
+        return $value;
+    }
+
+    private function wikipediaPageTitleOverride(string $title): ?string
+    {
+        $overrides = $this->wikipediaPageTitleOverrides();
+
+        return $overrides[$title] ?? null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function wikipediaPageTitleOverrides(): array
+    {
+        static $overrides = null;
+
+        if ($overrides !== null) {
+            return $overrides;
+        }
+
+        $overrides = [];
+
+        foreach ($this->catalogDataPaths() as $path) {
+            if (! is_file($path)) {
+                continue;
+            }
+
+            /** @var list<array{title: string, wikipedia_page_title?: string|null}> $events */
+            $events = require $path;
+
+            foreach ($events as $event) {
+                if (filled($event['wikipedia_page_title'] ?? null)) {
+                    $overrides[$event['title']] = $event['wikipedia_page_title'];
+                }
+            }
+        }
+
+        return $overrides;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function catalogDataPaths(): array
+    {
+        return [
+            database_path('seeders/data/wcw_pre1990_ppvs.php'),
+            database_path('seeders/data/wcw_clash_catalog.php'),
+        ];
+    }
+}
