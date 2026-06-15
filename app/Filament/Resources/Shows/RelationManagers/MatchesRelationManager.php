@@ -89,6 +89,14 @@ class MatchesRelationManager extends RelationManager
                     ->label('#')
                     ->sortable()
                     ->width('3rem'),
+                TextColumn::make('card_visibility')
+                    ->label('Card')
+                    ->badge()
+                    ->state(fn (WrestlingMatch $record): string => $record->is_ppv ? 'On card' : 'Pre-show')
+                    ->color(fn (WrestlingMatch $record): string => $record->is_ppv ? 'success' : 'warning')
+                    ->tooltip(fn (WrestlingMatch $record): ?string => $record->is_ppv
+                        ? null
+                        : 'Not on the public card — dark match or Main Event'),
                 TextColumn::make('participant_line')
                     ->label('Participants')
                     ->state(fn (WrestlingMatch $record): string => $record->participantLine())
@@ -105,9 +113,6 @@ class MatchesRelationManager extends RelationManager
                 TextColumn::make('formatted_duration')
                     ->label('Time')
                     ->state(fn (WrestlingMatch $record): string => $record->formattedDuration() ?? '—'),
-                IconColumn::make('is_ppv')
-                    ->boolean()
-                    ->label('PPV'),
                 TextColumn::make('match_type')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('title_name')

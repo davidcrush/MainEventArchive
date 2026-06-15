@@ -24,6 +24,14 @@ class WrestlingMatchesTable
                     ->label('#')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('card_visibility')
+                    ->label('Card')
+                    ->badge()
+                    ->state(fn (WrestlingMatch $record): string => $record->is_ppv ? 'On card' : 'Pre-show')
+                    ->color(fn (WrestlingMatch $record): string => $record->is_ppv ? 'success' : 'warning')
+                    ->tooltip(fn (WrestlingMatch $record): ?string => $record->is_ppv
+                        ? null
+                        : 'Not on the public card — dark match or Main Event'),
                 TextColumn::make('participant_line')
                     ->label('Participants')
                     ->state(fn (WrestlingMatch $record): string => $record->participantLine())

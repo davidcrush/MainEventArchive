@@ -101,6 +101,7 @@ Historical or alternate names for a venue (former arena names, piped wikilink la
 | title_name | string nullable | e.g. "WCW World Heavyweight" |
 | is_surprise | boolean | soft spoiler — omit from card when false spoilers |
 | is_rateable | boolean | false for segments in v1 |
+| is_ppv | boolean | `true` = on public card; `false` = pre-show (dark match or Main Event). Filament shows **Pre-show** badge when false |
 | winner_side | int nullable | **hard spoiler** — or use match_results table |
 | finish | string nullable | pinfall, submission, dq, etc. **hard spoiler** |
 | duration_seconds | int nullable | **hard spoiler** |
