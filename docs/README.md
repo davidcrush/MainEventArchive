@@ -12,6 +12,7 @@ Start here for product, domain, architecture, and frontend documentation.
 | Understand schema | [domain/data-model.md](domain/data-model.md) |
 | Implement spoilers | [domain/spoiler-rules.md](domain/spoiler-rules.md) |
 | Build import pipeline | [domain/data-import.md](domain/data-import.md) |
+| **Initial catalog seeding (local + Forge)** | [domain/initial-catalog-seeding.md](domain/initial-catalog-seeding.md) |
 | Wikipedia result formats | [domain/wikipedia-parser.md](domain/wikipedia-parser.md) |
 | Architecture & adapters | [architecture/overview.md](architecture/overview.md) |
 | Frontend setup | [frontend/stack.md](frontend/stack.md) |

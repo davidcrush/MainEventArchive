@@ -100,6 +100,7 @@ interface ShowDataImporter
 
 ## Related docs
 
+- [Initial catalog seeding](initial-catalog-seeding.md) — step-by-step seeder order for local and production
 - [ADR 002](../architecture/decisions/002-initial-seed-via-wikidata.md)
 - [Admin workflow](admin-workflow.md)
 - [Data model](data-model.md)

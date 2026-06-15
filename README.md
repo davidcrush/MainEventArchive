@@ -39,6 +39,8 @@ Frontend (when installed): `vendor/bin/sail npm run dev`
 
 ## Seeding
 
+**Full guide:** [docs/domain/initial-catalog-seeding.md](docs/domain/initial-catalog-seeding.md) — catalog seed order, Forge checklist, and when to use a DB dump instead.
+
 After migrations, seed the Filament admin account and (optionally) load the WCW PPV catalog.
 
 ### Admin user
