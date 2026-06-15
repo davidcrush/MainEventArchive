@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Shows\Pages;
 
 use App\Enums\ShowStatus;
 use App\Enums\ShowType;
+use App\Filament\Resources\Shows\Actions\PublishAllShowsAction;
 use App\Filament\Resources\Shows\ShowResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
@@ -17,6 +18,7 @@ class ListShows extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            PublishAllShowsAction::make(),
             CreateAction::make(),
         ];
     }

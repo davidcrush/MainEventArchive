@@ -26,7 +26,7 @@ stateDiagram-v2
 3. Verify card order, participants, results (results stored but spoiler-gated on public site)
 4. Set soft spoiler flags where known
 5. Link Cagematch URLs: run `vendor/bin/sail artisan shows:link-cagematch --promotion=wcw --from=1993 --to=1996 --dry-run`. If live fetch is blocked (HTTP 403), save each listing page from your browser as HTML and pass `--html=file.html` or `--html-dir=storage/app/cagematch/wcw-ppv/`. Paste URLs manually in Filament when no match is found.
-6. Publish
+6. Publish individual shows, or use **Publish all** on the Shows list to publish every `pending_review` row at once (browse cache is invalidated once).
 
 ## Manual show creation
 
