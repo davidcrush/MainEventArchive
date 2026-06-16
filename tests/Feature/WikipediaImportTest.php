@@ -98,14 +98,17 @@ WIKI,
         ])->assertSuccessful();
 
         $this->assertSame(1, WrestlingMatch::query()->where('show_id', $show->id)->count());
+        $match = WrestlingMatch::query()->where('show_id', $show->id)->firstOrFail();
         $this->assertDatabaseHas('match_participants', [
             'name' => 'Roddy Piper',
-            'side' => 1,
         ]);
         $this->assertDatabaseHas('match_participants', [
             'name' => 'Hollywood Hogan',
-            'side' => 2,
         ]);
+        $this->assertStringContainsString(
+            'Roddy Piper',
+            $match->participants()->where('side', $match->winner_side)->value('name') ?? '',
+        );
 
         $show->refresh();
         $this->assertSame('https://en.wikipedia.org/wiki/Starrcade_(1996)', $show->source_url);
@@ -225,14 +228,17 @@ WIKI,
         ])->assertSuccessful();
 
         $this->assertSame(1, WrestlingMatch::query()->where('show_id', $show->id)->count());
+        $match = WrestlingMatch::query()->where('show_id', $show->id)->firstOrFail();
         $this->assertDatabaseHas('match_participants', [
             'name' => 'Ric Flair',
-            'side' => 1,
         ]);
         $this->assertDatabaseHas('match_participants', [
             'name' => 'Randy Savage',
-            'side' => 2,
         ]);
+        $this->assertStringContainsString(
+            'Ric Flair',
+            $match->participants()->where('side', $match->winner_side)->value('name') ?? '',
+        );
 
         $show->refresh();
         $this->assertSame(

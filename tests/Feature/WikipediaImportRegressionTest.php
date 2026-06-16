@@ -107,7 +107,6 @@ WIKI]]],
         ]);
         $this->assertDatabaseHas('match_participants', [
             'name' => 'Kurt Angle',
-            'side' => 1,
         ]);
         $mainEvent = WrestlingMatch::query()
             ->where('show_id', $show->id)
@@ -115,10 +114,17 @@ WIKI]]],
             ->first();
         $this->assertNotNull($mainEvent);
         $this->assertSame('WWF Championship', $mainEvent->title_name);
+
         $this->assertStringContainsString(
-            'The Rock',
+            'McMahon',
             $mainEvent->participants()->where('side', 1)->value('name') ?? '',
+            'Champion (Triple H) side must be listed first in a title match.',
         );
+
+        $winnerName = $mainEvent->participants()
+            ->where('side', $mainEvent->winner_side)
+            ->value('name') ?? '';
+        $this->assertStringContainsString('The Rock', $winnerName);
     }
 
     /**

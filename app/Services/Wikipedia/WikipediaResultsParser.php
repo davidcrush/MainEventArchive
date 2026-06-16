@@ -314,6 +314,16 @@ class WikipediaResultsParser
             $this->parseTeamsFromSide($loserRaw, 2, combineSegments: ! $splitLoserIntoSides),
         );
 
+        $titleName = $this->extractTitleName($this->stripWikiMarkup($stipulation));
+        $championSide = $this->detectChampionSide($winnerRaw, $loserAndFinishRaw);
+
+        ['participants' => $participants, 'winnerSide' => $winnerSide] = $this->applySpoilerSafeSideOrder(
+            $participants,
+            $cardOrder,
+            $titleName,
+            $championSide,
+        );
+
         return $this->buildParsedMatch(
             cardOrder: $cardOrder,
             stipulation: $stipulation,
@@ -321,7 +331,121 @@ class WikipediaResultsParser
             participants: $participants,
             finish: $finish ?? 'pinfall',
             isPpv: $isPpv,
+            winnerSide: $winnerSide,
         );
+    }
+
+    /**
+     * Determine which original side holds the defending champion, based on the
+     * Wikipedia "(c)" marker. The winner is parsed as side 1 and the losers as
+     * side 2+, so the champion marker maps to side 1 (winner) or the lowest
+     * loser side (2) when present.
+     */
+    private function detectChampionSide(string $winnerRaw, string $loserAndFinishRaw): ?int
+    {
+        if (stripos($winnerRaw, '(c)') !== false) {
+            return 1;
+        }
+
+        if (stripos($loserAndFinishRaw, '(c)') !== false) {
+            return 2;
+        }
+
+        return null;
+    }
+
+    /**
+     * Reorder match sides so the stored order does not leak the winner when
+     * spoilers are off. Championship matches list the champion first; other
+     * matches use a deterministic, winner-independent shuffle. The returned
+     * winnerSide is remapped to the side's new position.
+     *
+     * @param  list<array{name: string, side: int, sort_order: int}>  $participants
+     * @return array{participants: list<array{name: string, side: int, sort_order: int}>, winnerSide: int}
+     */
+    private function applySpoilerSafeSideOrder(
+        array $participants,
+        int $cardOrder,
+        ?string $titleName,
+        ?int $championSide,
+        int $winnerSide = 1,
+    ): array {
+        $sides = [];
+
+        foreach ($participants as $participant) {
+            $sides[$participant['side']][] = $participant;
+        }
+
+        $sideKeys = array_keys($sides);
+        sort($sideKeys);
+
+        if (count($sideKeys) < 2) {
+            return ['participants' => $participants, 'winnerSide' => $winnerSide];
+        }
+
+        if ($titleName !== null && $championSide !== null && in_array($championSide, $sideKeys, true)) {
+            $orderedSides = array_merge(
+                [$championSide],
+                array_values(array_filter($sideKeys, static fn (int $key): bool => $key !== $championSide)),
+            );
+        } else {
+            $orderedSides = $this->deterministicSideOrder($sides, $sideKeys, $cardOrder);
+        }
+
+        $reordered = [];
+        $newWinnerSide = $winnerSide;
+
+        foreach ($orderedSides as $newIndex => $oldSide) {
+            $newSide = $newIndex + 1;
+
+            if ($oldSide === $winnerSide) {
+                $newWinnerSide = $newSide;
+            }
+
+            foreach ($sides[$oldSide] as $participant) {
+                $participant['side'] = $newSide;
+                $reordered[] = $participant;
+            }
+        }
+
+        return ['participants' => $reordered, 'winnerSide' => $newWinnerSide];
+    }
+
+    /**
+     * Produce a stable, winner-independent ordering of side keys. The order is
+     * seeded by card position and the full (sorted) participant roster so it is
+     * identical across page loads and re-imports but reveals nothing about who
+     * won.
+     *
+     * @param  array<int, list<array{name: string, side: int, sort_order: int}>>  $sides
+     * @param  list<int>  $sideKeys
+     * @return list<int>
+     */
+    private function deterministicSideOrder(array $sides, array $sideKeys, int $cardOrder): array
+    {
+        $allNames = [];
+
+        foreach ($sides as $members) {
+            foreach ($members as $participant) {
+                $allNames[] = $participant['name'];
+            }
+        }
+
+        sort($allNames, SORT_STRING);
+        $seed = $cardOrder.'|'.implode('|', $allNames);
+
+        $sideHashes = [];
+
+        foreach ($sideKeys as $sideKey) {
+            $names = array_map(static fn (array $participant): string => $participant['name'], $sides[$sideKey]);
+            sort($names, SORT_STRING);
+            $sideHashes[$sideKey] = md5($seed.'#'.implode('&', $names));
+        }
+
+        $ordered = $sideKeys;
+        usort($ordered, static fn (int $a, int $b): int => strcmp($sideHashes[$a], $sideHashes[$b]));
+
+        return $ordered;
     }
 
     /**

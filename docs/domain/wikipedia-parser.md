@@ -69,16 +69,24 @@ Values like `Sold out` or empty params → `attendance` left unchanged on re-imp
 
 | Field | Mapping |
 |-------|---------|
-| Winner | Side 1 |
-| Loser | Side 2+ (one side per team in triangle matches) |
+| Winner | `winner_side` (recorded independently of display order — see **Spoiler-safe side order**) |
+| Sides | One side per team; losers split only in triangle matches |
 | Tag teams | `Team (Member1 & Member2)` — team name with members in parentheses |
 | Comma / and lists | `[[A]], [[B]] and [[C]]` on one side → `A & B & C` (six-man tags, multi-person sides) |
 | Finish | Text after `by`, default `pinfall` |
+| Champion marker | `(c)` detected to drive ordering, then stripped from the stored name |
 | Managers | `(with [[Name]])` stripped before participant extraction |
 
 **Examples:** Most WCW PPV undercard matches; World War 3 1996 match 8 (triangle tag); Starrcade 1997 match 2 (six-man tag with comma-separated winners).
 
 **Side grouping:** Loser segments split into separate sides only when the stipulation contains `triangle` (three-way matches). All other formats — including six-man tags and standard tag teams — combine each side into one participant row.
+
+**Spoiler-safe side order:** Wikipedia lists the winner first, which would leak results with spoilers off (the public page orders participants by `side`). To avoid this, `parseStandardMatchLine` reassigns side numbers at import:
+
+- **Championship matches** (a `title_name` is present and a `(c)` champion is detected): the champion's side is listed first. The champion may have won *or* lost, so this never reveals the result.
+- **All other decisive matches**: sides are ordered by a deterministic, winner-independent shuffle seeded by `card_order` plus the full (sorted) participant roster. The order is stable across page loads and re-imports but uncorrelated with the winner.
+
+`winner_side` is always set to the side that actually won (it can be `1`, `2`, …) and is filtered server-side when spoilers are off. Only `parseStandardMatchLine` reorders; battle royals render via a masked participant line, and non-decisive results (`no_contest`, `ended_when`) have `winner_side = null`, so neither leaks.
 
 ### Battle royal — winner + last eliminated
 
@@ -155,8 +163,8 @@ Document here when import fails or partial data is expected. Staff can complete 
 
 ## Participant rules
 
-1. **Always expect a winner** on side 1 when the row parses successfully.
-2. **Runner-up** (last eliminated) on side 2 when present — most battle royals and all standard matches.
+1. **Always expect a winner** recorded in `winner_side` when the row parses successfully (the side number is spoiler-safe, not necessarily side 1 — see **Spoiler-safe side order**).
+2. **Runner-up** (last eliminated) on side 2 when present — most battle royals.
 3. **Additional entrants** (full roster, final four) — not imported in v1; listed above for future parser work.
 4. **Surprise entrants** — not inferred from Wikipedia text in v1; set `is_surprise_entrant` in admin.
 

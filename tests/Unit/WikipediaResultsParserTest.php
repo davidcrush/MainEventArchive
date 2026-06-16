@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Data\ParsedWikipediaMatch;
 use App\Exceptions\WikipediaMatchCountMismatchException;
 use App\Services\Wikipedia\WikipediaResultsParser;
 use Tests\TestCase;
@@ -15,6 +16,26 @@ class WikipediaResultsParserTest extends TestCase
         parent::setUp();
 
         $this->parser = app(WikipediaResultsParser::class);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function winnerNames(ParsedWikipediaMatch $match): array
+    {
+        return collect($match->participants)
+            ->where('side', $match->winnerSide)
+            ->pluck('name')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function participantNames(ParsedWikipediaMatch $match): array
+    {
+        return collect($match->participants)->pluck('name')->values()->all();
     }
 
     public function test_parses_pro_wrestling_results_template_for_starrcade_1996(): void
@@ -204,7 +225,9 @@ WIKI;
         $matches = $this->parser->parse($wikitext);
 
         $this->assertCount(1, $matches);
-        $this->assertSame('Chris Benoit', $matches[0]->participants[0]['name']);
+        $this->assertContains('Chris Benoit', $this->participantNames($matches[0]));
+        $this->assertContains('Chris Jericho', $this->participantNames($matches[0]));
+        $this->assertSame(['Chris Benoit'], $this->winnerNames($matches[0]));
     }
 
     public function test_parses_tag_teams_with_team_name_and_members(): void
@@ -256,16 +279,16 @@ WIKI;
         $this->assertCount(4, $matches);
 
         $this->assertFalse($matches[0]->isPpv);
-        $this->assertSame('Harlem Heat (Booker T & Stevie Ray)', $matches[0]->participants[0]['name']);
+        $this->assertSame(['Harlem Heat (Booker T & Stevie Ray)'], $this->winnerNames($matches[0]));
 
-        $this->assertSame('Dick Slater & Bunkhouse Buck', $matches[1]->participants[0]['name']);
-        $this->assertSame('Frankie Lancaster & Barry Houston', $matches[1]->participants[1]['name']);
+        $this->assertSame(['Dick Slater & Bunkhouse Buck'], $this->winnerNames($matches[1]));
+        $this->assertContains('Frankie Lancaster & Barry Houston', $this->participantNames($matches[1]));
 
         $this->assertSame('disqualification', $matches[2]->finish);
-        $this->assertSame('Jim Duggan', $matches[2]->participants[0]['name']);
+        $this->assertSame(['Jim Duggan'], $this->winnerNames($matches[2]));
 
-        $this->assertSame('Sting', $matches[3]->participants[0]['name']);
-        $this->assertSame('Meng', $matches[3]->participants[1]['name']);
+        $this->assertSame(['Sting'], $this->winnerNames($matches[3]));
+        $this->assertContains('Meng', $this->participantNames($matches[3]));
         $this->assertSame('WCW United States Heavyweight Championship', $matches[3]->titleName);
     }
 
@@ -511,8 +534,80 @@ WIKI;
 
         $matches = $this->parser->parse($wikitext);
 
-        $this->assertSame('Edge and Christian', $matches[0]->participants[0]['name']);
+        $this->assertContains('Edge and Christian', $this->participantNames($matches[0]));
         $this->assertSame('WWF Tag Team Championship', $matches[0]->titleName);
+        $this->assertStringContainsString('Too Cool', $matches[0]->participants[0]['name']);
+        $this->assertSame(['Edge and Christian'], $this->winnerNames($matches[0]));
+    }
+
+    public function test_championship_match_lists_champion_first_even_when_champion_loses(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match1 = [[Bret Hart]] defeated [[Ric Flair]] (c)
+| stip1 = Singles match for the [[WCW World Heavyweight Championship]]
+| time1 = 20:00
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertSame('WCW World Heavyweight Championship', $matches[0]->titleName);
+        $this->assertSame('Ric Flair', $matches[0]->participants[0]['name']);
+        $this->assertSame(['Bret Hart'], $this->winnerNames($matches[0]));
+        $this->assertSame(2, $matches[0]->winnerSide);
+    }
+
+    public function test_non_title_match_order_is_independent_of_winner(): void
+    {
+        $alphaWins = $this->parser->parse(<<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match1 = [[Alpha]] defeated [[Bravo]]
+| stip1 = Singles match
+| time1 = 5:00
+}}
+WIKI);
+
+        $bravoWins = $this->parser->parse(<<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match1 = [[Bravo]] defeated [[Alpha]]
+| stip1 = Singles match
+| time1 = 5:00
+}}
+WIKI);
+
+        $this->assertNull($alphaWins[0]->titleName);
+        $this->assertSame(
+            $this->participantNames($alphaWins[0]),
+            $this->participantNames($bravoWins[0]),
+            'Non-title side ordering must not depend on who won.',
+        );
+        $this->assertSame(['Alpha'], $this->winnerNames($alphaWins[0]));
+        $this->assertSame(['Bravo'], $this->winnerNames($bravoWins[0]));
+    }
+
+    public function test_non_title_match_order_is_stable_across_repeated_parses(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match1 = [[Sting (wrestler)|Sting]] defeated [[Vader]]
+| stip1 = Singles match
+| time1 = 12:00
+}}
+WIKI;
+
+        $first = $this->parser->parse($wikitext);
+        $second = $this->parser->parse($wikitext);
+
+        $this->assertSame(
+            $this->participantNames($first[0]),
+            $this->participantNames($second[0]),
+        );
+        $this->assertSame($first[0]->winnerSide, $second[0]->winnerSide);
     }
 
     public function test_king_of_the_ring_2000_parses_full_card_including_six_man_main_event(): void
@@ -529,9 +624,8 @@ WIKI;
         $this->assertNotNull($mainEvent);
         $this->assertSame('tag', $mainEvent->matchType);
         $this->assertSame('WWF Championship', $mainEvent->titleName);
-        $this->assertSame(1, $mainEvent->winnerSide);
-        $this->assertStringContainsString('The Rock', $mainEvent->participants[0]['name']);
-        $this->assertStringContainsString('McMahon', $mainEvent->participants[1]['name']);
+        $this->assertStringContainsString('McMahon', $mainEvent->participants[0]['name']);
+        $this->assertStringContainsString('The Rock', implode(' ', $this->winnerNames($mainEvent)));
     }
 
     public function test_throws_when_wikitable_declares_more_matches_than_can_be_parsed(): void

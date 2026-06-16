@@ -29,6 +29,17 @@ timestamp_start, timestamp_end, title_changed
 
 Also omit UI affordances: "Jump to match", duration display, result text.
 
+### Participant ordering must not leak the result
+
+`winner_side` is hidden when spoilers are off, but the **order** participants are displayed in can still leak the winner. The public card orders participants by `side` ascending, so if the winner were always stored as side 1 (as Wikipedia lists them), the winner would always appear first.
+
+To prevent this, side order is made spoiler-safe **at import** (see [wikipedia-parser.md → Spoiler-safe side order](wikipedia-parser.md)):
+
+- **Championship matches:** the champion (detected via `(c)`) is listed first. Safe because the champion may have won or lost.
+- **Other decisive matches:** a deterministic, winner-independent shuffle (seeded by card position + sorted roster) — stable across re-imports, uncorrelated with the winner.
+
+`winner_side` records the real winner independently and remains a hard-spoiler field. Manually curated matches in Filament are the curator's responsibility to order safely.
+
 ## Soft-spoiler behavior
 
 ### `Match.is_surprise = true`
