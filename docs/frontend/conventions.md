@@ -47,7 +47,9 @@ React + Inertia + Chakra UI standards for Main Event Archive.
 | `MatchRow` | Spoiler-aware props only |
 | `RatingStars` | MEA ratings only |
 | `CagematchBadge` | Link-out, no score |
-| `VideoPlaceholder` | v1–v1.5 empty state copy |
+| `VideoPlaceholder` | “Where to watch” section; branded YouTube/Netflix link-out buttons |
+| `YouTubeWatchButton` | Official white full logo on black (`youtube-logo-full-white.png`) |
+| `NetflixWatchButton` | Official wordmark on black (`Netflix_Logo_RGB.png`) |
 
 ## SEO
 

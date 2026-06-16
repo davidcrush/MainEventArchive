@@ -1,4 +1,6 @@
-import { Box, Flex, Link, Text } from '@chakra-ui/react';
+import NetflixWatchButton from '@/Components/NetflixWatchButton';
+import YouTubeWatchButton from '@/Components/YouTubeWatchButton';
+import { Box, Flex, Heading, Text, VStack } from '@chakra-ui/react';
 
 export interface WatchTarget {
     provider: string;
@@ -7,28 +9,36 @@ export interface WatchTarget {
     label: string;
 }
 
-function netflixAriaLabel(mode: string): string {
-    if (mode === 'search') {
-        return 'Watch on Netflix (opens search in new tab)';
+function WatchTargetRow({ target }: { target: WatchTarget }) {
+    if (target.provider === 'youtube') {
+        return (
+            <VStack gap={2}>
+                <YouTubeWatchButton url={target.url} />
+                <Text color="mea.muted" fontSize="sm">
+                    Opens on YouTube.com · new tab
+                </Text>
+            </VStack>
+        );
     }
 
-    return 'Watch on Netflix (opens title in new tab)';
-}
-
-function buttonStyles(provider: string) {
-    if (provider === 'netflix') {
-        return {
-            bg: '#E50914',
-            color: 'white',
-            _hover: { bg: '#F40612', textDecoration: 'none' },
-        };
+    if (target.provider === 'netflix') {
+        return (
+            <VStack gap={2}>
+                <NetflixWatchButton url={target.url} mode={target.mode} />
+                {target.mode === 'search' ? (
+                    <Text color="mea.muted" fontSize="sm">
+                        Search Netflix for this event
+                    </Text>
+                ) : (
+                    <Text color="mea.muted" fontSize="sm">
+                        Opens on Netflix.com · new tab
+                    </Text>
+                )}
+            </VStack>
+        );
     }
 
-    return {
-        bg: 'mea.gold',
-        color: 'mea.bg',
-        _hover: { bg: 'mea.goldBright', textDecoration: 'none' },
-    };
+    return null;
 }
 
 export default function VideoPlaceholder({
@@ -53,10 +63,6 @@ export default function VideoPlaceholder({
         );
     }
 
-    const hasNetflixSearch = watchTargets.some(
-        (target) => target.provider === 'netflix' && target.mode === 'search',
-    );
-
     return (
         <Box
             bg="mea.surfaceAlt"
@@ -66,37 +72,24 @@ export default function VideoPlaceholder({
             p={{ base: 6, md: 8 }}
             textAlign="center"
         >
-            <Flex direction="column" align="center" gap={3}>
-                <Flex gap={3} flexWrap="wrap" justify="center">
+            <Flex direction="column" align="center" gap={5}>
+                <Heading as="h2" size="sm" color="white" fontWeight="semibold">
+                    Where to watch
+                </Heading>
+                <Flex
+                    direction={{ base: 'column', sm: 'row' }}
+                    gap={6}
+                    flexWrap="wrap"
+                    justify="center"
+                    align={{ base: 'center', sm: 'flex-start' }}
+                >
                     {watchTargets.map((target) => (
-                        <Link
+                        <WatchTargetRow
                             key={`${target.provider}-${target.mode}-${target.url}`}
-                            href={target.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            display="inline-flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            fontWeight="semibold"
-                            px={8}
-                            py={2.5}
-                            borderRadius="md"
-                            aria-label={
-                                target.provider === 'netflix'
-                                    ? netflixAriaLabel(target.mode)
-                                    : 'Watch on YouTube (opens in new tab)'
-                            }
-                            {...buttonStyles(target.provider)}
-                        >
-                            {target.label}
-                        </Link>
+                            target={target}
+                        />
                     ))}
                 </Flex>
-                {hasNetflixSearch ? (
-                    <Text color="mea.muted" fontSize="sm">
-                        Search Netflix for this event
-                    </Text>
-                ) : null}
             </Flex>
         </Box>
     );

@@ -88,6 +88,29 @@ vendor/bin/sail artisan videos:import-netflix --html=storage/app/netflix/wwe-ppv
 
 Config: [`config/streaming.php`](../../config/streaming.php) (`NETFLIX_WWE_PPV_SEARCH_ENABLED`, search URL template).
 
+### Brand assets (show page buttons)
+
+Official PNGs from each platform’s brand kit. Do not recolor, stretch, or modify artwork. Black `#000000` button background matches Netflix guidance and YouTube dark-background logo usage. Link-out only — no partnership implied.
+
+| File | Used in UI | Source |
+|------|------------|--------|
+| [`Netflix_Logo_RGB.png`](../../resources/images/third-party/Netflix_Logo_RGB.png) | `NetflixWatchButton` (wordmark) | [Netflix Brand Site → Logos](https://brand.netflix.com/en/assets/logos/) |
+| [`Netflix_Symbol_RGB.png`](../../resources/images/third-party/Netflix_Symbol_RGB.png) | Alternate (symbol) | Same — available if a compact icon treatment is needed elsewhere |
+| [`youtube-logo-full-white.png`](../../resources/images/third-party/youtube-logo-full-white.png) | `YouTubeWatchButton` | [YouTube Brand Resources](https://www.youtube.com/howyoutubeworks/resources/brand-resources/) — white full logo for dark backgrounds |
+
+Frontend: `NetflixWatchButton` uses the **wordmark** on black. Accessible name stays in `aria-label`; trust copy below the button names the platform.
+
+## YouTube link-out
+
+MEA links out to YouTube for full-show viewing when a primary YouTube video exists; we never host video.
+
+- **UI:** YouTube full logo on black button (matches Netflix pattern) + “Opens on YouTube.com · new tab” trust line
+- **Assets:** white full logo PNG from [YouTube Brand Resources](https://www.youtube.com/howyoutubeworks/resources/brand-resources/) at `resources/images/third-party/youtube-logo-full-white.png`
+- **Allowed:** outbound link with `rel="noopener noreferrer"`; store `provider`, `external_id`, `url` on `videos` only
+- **Not allowed:** implying YouTube partnership; caching YouTube metadata beyond link fields
+
+See [`docs/architecture/video-providers.md`](../architecture/video-providers.md).
+
 ## Legal note
 
 Link-out without republishing is low-risk. Displaying third-party scores would require permission. Not legal advice.
