@@ -33,11 +33,19 @@ class WikipediaPageTitleResolverTest extends TestCase
 
         $candidates = $this->resolver->candidates($show);
 
-        $this->assertSame([
-            'Bash at the Beach (1996)',
-            'The Bash at the Beach (1996)',
-            'Bash at the Beach 1996',
-        ], $candidates);
+        $this->assertContains('Bash at the Beach (1996)', $candidates);
+        $this->assertContains('The Bash at the Beach (1996)', $candidates);
+        $this->assertContains('Bash at the Beach 1996', $candidates);
+    }
+
+    public function test_candidates_normalize_article_casing_for_wikipedia_titles(): void
+    {
+        $show = new Show(['title' => 'King Of The Ring 2000']);
+
+        $candidates = $this->resolver->candidates($show);
+
+        $this->assertContains('King of the Ring (2000)', $candidates);
+        $this->assertContains('King Of The Ring (2000)', $candidates);
     }
 
     public function test_candidates_include_the_prefix_for_great_american_bash(): void

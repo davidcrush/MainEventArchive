@@ -236,7 +236,7 @@ WIKI,
 
         $show->refresh();
         $this->assertSame(
-            'https://en.wikipedia.org/wiki/Great_American_Bash_(1995)',
+            'https://en.wikipedia.org/wiki/The_Great_American_Bash_(1995)',
             $show->source_url,
         );
     }

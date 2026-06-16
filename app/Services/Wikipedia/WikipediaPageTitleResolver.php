@@ -25,8 +25,17 @@ class WikipediaPageTitleResolver
             $year = $matches[2];
             $shortYear = substr($year, 2);
 
-            $candidates[] = "{$name} ({$year})";
-            $candidates[] = "The {$name} ({$year})";
+            $yearCandidates = [
+                "{$name} ({$year})",
+                "The {$name} ({$year})",
+                $show->title,
+            ];
+
+            foreach ($yearCandidates as $yearCandidate) {
+                foreach ($this->articleNormalizedTitles($yearCandidate) as $normalizedTitle) {
+                    $candidates[] = $normalizedTitle;
+                }
+            }
 
             if (preg_match('/^In Your House (\d+): (.+)$/', $name, $inYourHouseMatches) === 1) {
                 $candidates[] = "In Your House {$inYourHouseMatches[1]}: {$inYourHouseMatches[2]} ({$year})";
@@ -35,13 +44,33 @@ class WikipediaPageTitleResolver
             if (strcasecmp($name, 'Fall Brawl') === 0) {
                 $candidates[] = "Fall Brawl '{$shortYear}: War Games";
             }
-
-            $candidates[] = $show->title;
         } else {
-            $candidates[] = $show->title;
+            foreach ($this->articleNormalizedTitles($show->title) as $normalizedTitle) {
+                $candidates[] = $normalizedTitle;
+            }
         }
 
         return array_values(array_unique($candidates));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function articleNormalizedTitles(string $title): array
+    {
+        $titles = [$title];
+
+        $normalized = preg_replace_callback(
+            '/\b(Of|The|At|And|Vs|In|On|For|From|To)\b/',
+            static fn (array $matches): string => strtolower($matches[1]),
+            $title,
+        );
+
+        if (is_string($normalized) && $normalized !== $title) {
+            $titles[] = $normalized;
+        }
+
+        return $titles;
     }
 
     public function resolve(Show $show, ?string $identifier = null): string

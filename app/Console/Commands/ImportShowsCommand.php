@@ -15,7 +15,8 @@ class ImportShowsCommand extends Command
                             {identifier? : Wikidata QID, Wikipedia page title, or show slug}
                             {--from=1993 : Start year (inclusive)}
                             {--to=1996 : End year (inclusive)}
-                            {--promotion= : Promotion slug filter (required for wikipedia bulk import)}';
+                            {--promotion= : Promotion slug filter (required for wikipedia bulk import)}
+                            {--strict : Exit with failure when any show is skipped or unresolved}';
 
     protected $description = 'Import wrestling shows from external data sources';
 
@@ -78,6 +79,12 @@ class ImportShowsCommand extends Command
 
         foreach ($result->warnings as $warning) {
             $this->warn($warning);
+        }
+
+        if ($source === 'wikipedia' && $this->option('strict') && $result->skipped > 0) {
+            $this->error('Wikipedia import finished with unresolved shows. Re-run with shows:verify-wikipedia for details.');
+
+            return self::FAILURE;
         }
 
         $this->info('Import complete.');

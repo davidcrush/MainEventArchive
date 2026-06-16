@@ -153,6 +153,10 @@ class WikipediaResultsParser
             return $this->parseNoContestMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv);
         }
 
+        if (preg_match('/\s+ended\s+when\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
+            return $this->parseEndedWhenMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv);
+        }
+
         throw new RuntimeException("Could not parse winner/loser for match {$cardOrder}.");
     }
 
@@ -270,6 +274,48 @@ class WikipediaResultsParser
             participants: $participants,
             winnerSide: null,
             finish: 'no_contest',
+            durationSeconds: $this->parseDuration($time),
+            isRateable: ! str_contains(strtolower($cleanStipulation), 'dark match'),
+            isPpv: $isPpv,
+        );
+    }
+
+    /**
+     * @param  array<int, array{0: non-empty-string, 1: int}>  $splitMatch
+     */
+    private function parseEndedWhenMatchLine(
+        string $matchLine,
+        string $stipulation,
+        string $time,
+        int $cardOrder,
+        array $splitMatch,
+        bool $isPpv,
+    ): ParsedWikipediaMatch {
+        $participantsRaw = trim(substr($matchLine, 0, $splitMatch[0][1]));
+
+        if (! preg_match('/\s+vs\.?\s+/i', $participantsRaw, $versusMatch, PREG_OFFSET_CAPTURE)) {
+            throw new RuntimeException("Could not parse participants for ended-when match {$cardOrder}.");
+        }
+
+        $sideOneRaw = trim(substr($participantsRaw, 0, $versusMatch[0][1]));
+        $sideTwoRaw = trim(substr($participantsRaw, $versusMatch[0][1] + strlen($versusMatch[0][0])));
+
+        $participants = array_merge(
+            $this->parseTeamsFromSide($sideOneRaw, 1, combineSegments: true),
+            $this->parseTeamsFromSide($sideTwoRaw, 2, combineSegments: true),
+        );
+
+        $cleanStipulation = $this->stripWikiMarkup($stipulation);
+        $finishRaw = trim(substr($matchLine, $splitMatch[0][1] + strlen($splitMatch[0][0])));
+        $finish = $this->stripWikiMarkup($finishRaw);
+
+        return new ParsedWikipediaMatch(
+            cardOrder: $cardOrder,
+            matchType: $this->resolveMatchType($cleanStipulation, 'no_contest'),
+            titleName: $this->extractTitleName($cleanStipulation),
+            participants: $participants,
+            winnerSide: null,
+            finish: $finish !== '' ? $finish : 'no_contest',
             durationSeconds: $this->parseDuration($time),
             isRateable: ! str_contains(strtolower($cleanStipulation), 'dark match'),
             isPpv: $isPpv,

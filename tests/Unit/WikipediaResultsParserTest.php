@@ -434,4 +434,25 @@ WIKI;
         $this->assertSame('The Midnight Express (Bobby Eaton & Stan Lane)', $matches[0]->participants[0]['name']);
         $this->assertSame('The Russian Assassins', $matches[0]->participants[1]['name']);
     }
+
+    public function test_parses_ended_when_result_as_no_contest_style_match(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match8 = [[Pat Patterson (wrestler)|Pat Patterson]] (c) vs. [[Gerald Brisco]] ended when [[Crash Holly]] pinned Patterson
+| stip8 = [[Hardcore match|Hardcore]] [[Evening gown match]] for the [[WWF Hardcore Championship]]
+| time8 = 3:07
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(1, $matches);
+        $this->assertSame(8, $matches[0]->cardOrder);
+        $this->assertNull($matches[0]->winnerSide);
+        $this->assertSame('Pat Patterson', $matches[0]->participants[0]['name']);
+        $this->assertSame('Gerald Brisco', $matches[0]->participants[1]['name']);
+        $this->assertStringContainsString('Crash Holly pinned Patterson', $matches[0]->finish);
+    }
 }
