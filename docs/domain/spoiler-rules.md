@@ -14,7 +14,7 @@ Spoilers are **off by default**. Users opt in **per show** to see results, match
 | **Hard** | Match lengths, durations, timestamp ranges | Never when spoilers off |
 | **Soft** | Surprise matches | Omit entire match from card when `is_surprise` |
 | **Soft** | Surprise entrants | Show `placeholder_label` instead of name when flagged |
-| **Soft** | Tournament/bracket outcomes | Hide when flagged; full modeling deferred |
+| **Soft** | Tournament/bracket advancement | Mask participants when `tournament_round >= 2` |
 
 **Expectation:** Soft spoilers depend on staff flagging. UI may note: "We hide known surprises; some may slip through."
 
@@ -41,6 +41,14 @@ Also omit UI affordances: "Jump to match", duration display, result text.
 - When spoilers off: show `placeholder_label` only (e.g. "Mystery opponent")
 - When spoilers on: show real `name`
 
+### `Match.tournament_round`
+
+- `null` — not part of a tournament bracket mask; show participants normally
+- `1` — opening bracket round (quarterfinals, round 1); show participants when spoilers off
+- `2+` — advancement rounds (semifinals, final); when spoilers off, return `participant_line` only with `???` placeholders preserving side/team structure (e.g. `??? vs ???`, `??? & ??? vs ??? & ???`); omit `participants` array
+- Match type and `title_name` remain visible (e.g. "Semifinal")
+- Full bracket graph modeling deferred; staff sets round per match in Filament
+
 ## SpoilerContext
 
 Central service determines whether spoilers are enabled:
@@ -64,6 +72,7 @@ Apply in:
 |----------|------|
 | Off | Participants, match types, titles (championship name ok) |
 | Off | Battle royals: `participant_line` only — featured entrants, not winner vs runner-up |
+| Off | Tournament matches with `tournament_round >= 2`: `participant_line` with `???` placeholders only |
 | Off | No winners, finishes, durations, timestamps |
 | On | Full results + timestamps (when video exists, v1.6+) |
 
@@ -92,6 +101,7 @@ Feature tests must assert:
 - Spoilers off: hard fields absent from JSON/props
 - Spoilers on: hard fields present
 - Soft: surprise match absent when off; present when on
+- Soft: tournament round 2+ shows `???` placeholders when off; real names when on
 
 ## Related docs
 

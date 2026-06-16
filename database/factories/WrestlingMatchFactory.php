@@ -49,4 +49,11 @@ class WrestlingMatchFactory extends Factory
             'is_surprise' => true,
         ]);
     }
+
+    public function tournamentRound(int $round): static
+    {
+        return $this->state(fn (): array => [
+            'tournament_round' => $round,
+        ]);
+    }
 }

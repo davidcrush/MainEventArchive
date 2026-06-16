@@ -29,7 +29,9 @@ class MatchResource extends JsonResource
             'rating_count' => $this->when(isset($this->ratings_count), (int) $this->ratings_count),
         ];
 
-        if (! $spoilers->isEnabled() && $this->match_type === 'battle_royal') {
+        if (! $spoilers->isEnabled() && $this->shouldMaskTournamentParticipants()) {
+            $data['participant_line'] = $this->spoilerSafeTournamentParticipantLine();
+        } elseif (! $spoilers->isEnabled() && $this->match_type === 'battle_royal') {
             $data['participant_line'] = $this->spoilerSafeParticipantLine();
         } else {
             $data['participants'] = $this->whenLoaded(

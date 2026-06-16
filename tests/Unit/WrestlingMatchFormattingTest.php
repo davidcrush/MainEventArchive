@@ -140,4 +140,87 @@ class WrestlingMatchFormattingTest extends TestCase
             $match->fresh()->spoilerSafeParticipantLine(),
         );
     }
+
+    public function test_spoiler_safe_tournament_participant_line_masks_singles(): void
+    {
+        $match = WrestlingMatch::factory()->tournamentRound(2)->create();
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Chris Jericho',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Stone Cold',
+            'side' => 2,
+        ]);
+
+        $this->assertTrue($match->fresh()->shouldMaskTournamentParticipants());
+        $this->assertSame('??? vs ???', $match->fresh()->spoilerSafeTournamentParticipantLine());
+    }
+
+    public function test_spoiler_safe_tournament_participant_line_preserves_tag_structure(): void
+    {
+        $match = WrestlingMatch::factory()->tournamentRound(3)->create();
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Edge',
+            'side' => 1,
+            'sort_order' => 0,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Christian',
+            'side' => 1,
+            'sort_order' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Hardy Boyz',
+            'side' => 2,
+            'sort_order' => 0,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Lita',
+            'side' => 2,
+            'sort_order' => 1,
+        ]);
+
+        $this->assertSame('??? & ??? vs ??? & ???', $match->fresh()->spoilerSafeTournamentParticipantLine());
+    }
+
+    public function test_spoiler_safe_tournament_participant_line_preserves_multi_side_structure(): void
+    {
+        $match = WrestlingMatch::factory()->tournamentRound(2)->create([
+            'match_type' => 'triple_threat',
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Kurt Angle',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Chris Benoit',
+            'side' => 2,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Chris Jericho',
+            'side' => 3,
+        ]);
+
+        $this->assertSame('??? vs ??? vs ???', $match->fresh()->spoilerSafeTournamentParticipantLine());
+    }
+
+    public function test_should_not_mask_tournament_participants_for_round_one(): void
+    {
+        $match = WrestlingMatch::factory()->tournamentRound(1)->create();
+
+        $this->assertFalse($match->fresh()->shouldMaskTournamentParticipants());
+    }
 }

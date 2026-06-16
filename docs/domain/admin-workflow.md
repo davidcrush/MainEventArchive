@@ -57,6 +57,7 @@ When curating, consider flagging:
 
 - [ ] Royal Rumble / Battle Royal unannounced entrants
 - [ ] Money in the Bank winner not on pre-show card
+- [ ] Tournament bracket rounds — set `tournament_round` (1 = opening bouts visible with spoilers off; 2+ = masked)
 - [ ] Tournament final or advancement not advertised
 - [ ] Surprise return or debut
 - [ ] Match added night-of not on announced card

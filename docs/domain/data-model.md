@@ -112,6 +112,7 @@ Historical or alternate names for a venue (former arena names, piped wikilink la
 | title_name | string nullable | e.g. "WCW World Heavyweight" |
 | entrant_names | json nullable | Battle royal / Rumble entrant roster for spoiler-safe card lines (not the final-two result pairing) |
 | is_surprise | boolean | soft spoiler — omit from card when false spoilers |
+| tournament_round | int nullable | soft spoiler — round 1 visible with spoilers off; round 2+ masks participants with `???` placeholders |
 | is_rateable | boolean | false for segments in v1 |
 | is_ppv | boolean | `true` = on public card; `false` = pre-show or off-card (dark match, WCW Main Event, WWE Heat, or Free For All). Filament shows **Pre-show** badge when false |
 | winner_side | int nullable | **hard spoiler** — or use match_results table |
@@ -216,7 +217,7 @@ Alternate URLs for same video (mirrors, quality variants).
 ## Deferred entities
 
 - **Wrestler** — v2+ profiles; v1 uses participant names
-- **Tournament** — bracket modeling deferred; flag soft spoilers manually in v1
+- **Tournament** — full bracket graph deferred; v1 uses per-match `tournament_round` for spoiler masking only
 
 ## Related docs
 

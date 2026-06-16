@@ -49,6 +49,12 @@ class WrestlingMatchForm
                     ->columnSpanFull(),
                 Toggle::make('is_surprise')
                     ->required(),
+                TextInput::make('tournament_round')
+                    ->label('Tournament round')
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(5)
+                    ->helperText('Round 1 = opening bouts (visible with spoilers off). Round 2+ = ??? placeholders. Leave blank for non-tournament matches.'),
                 Toggle::make('is_rateable')
                     ->required(),
                 Toggle::make('is_ppv')

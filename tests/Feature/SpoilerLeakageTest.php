@@ -100,6 +100,110 @@ class SpoilerLeakageTest extends TestCase
         );
     }
 
+    public function test_tournament_round_one_shows_participants_when_spoilers_off(): void
+    {
+        $show = $this->createPublishedShow();
+        $show->matches()->delete();
+
+        $match = WrestlingMatch::factory()->tournamentRound(1)->create([
+            'show_id' => $show->id,
+            'card_order' => 1,
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Kurt Angle',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Austin',
+            'side' => 2,
+        ]);
+
+        $response = $this->get(route('shows.show', $show->slug));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('spoilersEnabled', false)
+            ->has('show.matches.0.participants', 2)
+            ->where('show.matches.0.participants.0.name', 'Kurt Angle')
+            ->missing('show.matches.0.participant_line')
+            ->missing('show.matches.0.winner_side'),
+        );
+    }
+
+    public function test_tournament_round_two_masks_participants_when_spoilers_off(): void
+    {
+        $show = $this->createPublishedShow();
+        $show->matches()->delete();
+
+        $match = WrestlingMatch::factory()->tournamentRound(2)->create([
+            'show_id' => $show->id,
+            'card_order' => 1,
+            'title_name' => 'WWF Championship Tournament Semifinal',
+            'winner_side' => 1,
+            'finish' => 'pinfall',
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Chris Jericho',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Stone Cold',
+            'side' => 2,
+        ]);
+
+        $response = $this->get(route('shows.show', $show->slug));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('spoilersEnabled', false)
+            ->where('show.matches.0.participant_line', '??? vs ???')
+            ->where('show.matches.0.title_name', 'WWF Championship Tournament Semifinal')
+            ->missing('show.matches.0.participants')
+            ->missing('show.matches.0.winner_side')
+            ->missing('show.matches.0.finish'),
+        );
+    }
+
+    public function test_tournament_round_two_shows_participants_when_spoilers_on(): void
+    {
+        $show = $this->createPublishedShow();
+        $show->matches()->delete();
+
+        $match = WrestlingMatch::factory()->tournamentRound(2)->create([
+            'show_id' => $show->id,
+            'card_order' => 1,
+            'winner_side' => 1,
+            'finish' => 'pinfall',
+            'duration_seconds' => 900,
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Chris Jericho',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Stone Cold',
+            'side' => 2,
+        ]);
+
+        $response = $this->get(route('shows.show', ['slug' => $show->slug, 'spoilers' => 1]));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('spoilersEnabled', true)
+            ->has('show.matches.0.participants', 2)
+            ->where('show.matches.0.participants.0.name', 'Chris Jericho')
+            ->where('show.matches.0.winner_side', 1)
+            ->where('show.matches.0.finish', 'pinfall')
+            ->where('show.matches.0.duration_seconds', 900),
+        );
+    }
+
     private function createPublishedShow(): Show
     {
         $promotion = Promotion::factory()->wcw()->create();

@@ -49,6 +49,10 @@ class WrestlingMatchesTable
                 TextColumn::make('title_name')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('tournament_round')
+                    ->label('Round')
+                    ->numeric()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_surprise')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),

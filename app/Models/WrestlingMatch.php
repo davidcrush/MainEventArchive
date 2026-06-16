@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'title_name',
     'entrant_names',
     'is_surprise',
+    'tournament_round',
     'is_rateable',
     'is_ppv',
     'winner_side',
@@ -159,6 +160,32 @@ class WrestlingMatch extends Model
         return 'Battle royal featuring '.implode(', ', $names)." and {$last}";
     }
 
+    public function shouldMaskTournamentParticipants(): bool
+    {
+        return $this->tournament_round !== null && $this->tournament_round > 1;
+    }
+
+    public function spoilerSafeTournamentParticipantLine(): string
+    {
+        $this->loadMissing('participants');
+
+        if ($this->participants->isEmpty()) {
+            return '??? vs ???';
+        }
+
+        $sides = [];
+
+        foreach ($this->participants->sortBy(['side', 'sort_order']) as $participant) {
+            $sides[$participant->side][] = $participant->name;
+        }
+
+        ksort($sides);
+
+        return collect($sides)
+            ->map(fn (array $names): string => implode(' & ', array_fill(0, count($names), '???')))
+            ->implode(' vs ');
+    }
+
     public function resultLine(): string
     {
         if ($this->winner_side === null) {
@@ -213,6 +240,7 @@ class WrestlingMatch extends Model
     {
         return [
             'entrant_names' => 'array',
+            'tournament_round' => 'integer',
             'is_surprise' => 'boolean',
             'is_rateable' => 'boolean',
             'is_ppv' => 'boolean',
