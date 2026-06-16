@@ -1,4 +1,5 @@
 import BrandLogo from '@/Components/BrandLogo';
+import GitHubRepoLink from '@/Components/GitHubRepoLink';
 import { getGlobalSpoilers, setGlobalSpoilers } from '@/hooks/useSpoilers';
 import { Link, usePage } from '@inertiajs/react';
 import { Box, Flex, Switch, Text } from '@chakra-ui/react';
@@ -127,6 +128,7 @@ export default function AppLayout({
                         <Link href={route('attribution')}>
                             <Text _hover={{ color: 'mea.gold' }}>Attribution</Text>
                         </Link>
+                        <GitHubRepoLink />
                         <Text
                             fontSize="xs"
                             color="mea.muted"

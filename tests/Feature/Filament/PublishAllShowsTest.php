@@ -87,11 +87,11 @@ class PublishAllShowsTest extends TestCase
             'date' => '1996-07-07',
         ]);
 
-        $keyBefore = BrowseCache::browseKey('wcw', 'ppv', null, false, null);
+        $keyBefore = BrowseCache::browseKey('wcw', 'ppv', null, false, null, 1);
 
         $this->get(route('browse'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->has('shows', 0));
+            ->assertInertia(fn ($page) => $page->has('shows.data', 0));
 
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin);
@@ -100,13 +100,13 @@ class PublishAllShowsTest extends TestCase
             ->callAction('publishAll')
             ->assertNotified('Published');
 
-        $keyAfter = BrowseCache::browseKey('wcw', 'ppv', null, false, null);
+        $keyAfter = BrowseCache::browseKey('wcw', 'ppv', null, false, null, 1);
 
-        $this->assertSame('browse.v1.wcw.ppv.all.all.all', $keyBefore);
-        $this->assertSame('browse.v2.wcw.ppv.all.all.all', $keyAfter);
+        $this->assertSame('browse.v1.wcw.ppv.all.all.all.page.1', $keyBefore);
+        $this->assertSame('browse.v2.wcw.ppv.all.all.all.page.1', $keyAfter);
 
         $this->get(route('browse'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->has('shows', 2));
+            ->assertInertia(fn ($page) => $page->has('shows.data', 2));
     }
 }

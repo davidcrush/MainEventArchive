@@ -60,7 +60,7 @@ class PublishShowTest extends TestCase
 
         $this->get(route('browse'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->has('shows', 0));
+            ->assertInertia(fn ($page) => $page->has('shows.data', 0));
 
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin);
@@ -70,8 +70,8 @@ class PublishShowTest extends TestCase
         $this->get(route('browse'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->has('shows', 1)
-                ->where('shows.0.slug', $show->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $show->slug),
             );
     }
 }

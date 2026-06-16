@@ -19,7 +19,7 @@ Redis caching plan for Main Event Archive.
 
 | Key pattern | Content | TTL | Invalidate when |
 |-------------|---------|-----|-----------------|
-| `browse:{promotion}:{year}:{page}` | Paginated show list DTO | 15 min | Show published/updated |
+| `browse.v{n}.{promotion}.{show_type}.{year}.{watchable}.{platform}.page.{page}` | Paginated show list DTO | 5 min | Show published/updated |
 | `show:{id}:rating` | Average stars + count | 5 min | Rating created/updated |
 | `match:{id}:rating` | Average stars + count | 5 min | Rating created/updated |
 | `search:{hash}` | Search results page | 10 min | Any show in result set updated |

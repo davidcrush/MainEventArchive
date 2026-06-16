@@ -38,11 +38,11 @@ class BrowseWatchableFilterTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
-                ->has('shows', 2)
-                ->where('shows', fn ($shows) => collect($shows)->contains(
+                ->has('shows.data', 2)
+                ->where('shows.data', fn ($shows) => collect($shows)->contains(
                     fn ($show) => $show['slug'] === $showWithVideo->slug && $show['has_video'] === true,
                 ))
-                ->where('shows', fn ($shows) => collect($shows)->contains(
+                ->where('shows.data', fn ($shows) => collect($shows)->contains(
                     fn ($show) => $show['slug'] === $showWithoutVideo->slug && $show['has_video'] === false,
                 )),
             );
@@ -63,8 +63,8 @@ class BrowseWatchableFilterTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
                 ->where('filters.watchable', false)
-                ->has('shows', 2)
-                ->where('shows', fn ($shows) => collect($shows)->pluck('slug')->sort()->values()->all() === collect([
+                ->has('shows.data', 2)
+                ->where('shows.data', fn ($shows) => collect($shows)->pluck('slug')->sort()->values()->all() === collect([
                     $showWithVideo->slug,
                     $showWithoutVideo->slug,
                 ])->sort()->values()->all()),
@@ -86,9 +86,9 @@ class BrowseWatchableFilterTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
                 ->where('filters.watchable', true)
-                ->has('shows', 1)
-                ->where('shows.0.slug', $showWithVideo->slug)
-                ->where('shows.0.has_video', true),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $showWithVideo->slug)
+                ->where('shows.data.0.has_video', true),
             );
     }
 
@@ -100,7 +100,8 @@ class BrowseWatchableFilterTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
-                ->has('shows', 0),
+                ->has('shows.data', 0)
+                ->where('shows.meta.total', 0),
             );
 
         $this->assertDatabaseHas('shows', ['id' => $showWithoutVideo->id]);

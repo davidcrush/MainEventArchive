@@ -49,7 +49,7 @@ class BrowsePlatformFilterTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
                 ->where('filters.platform', null)
-                ->has('shows', 3),
+                ->has('shows.data', 3),
             );
     }
 
@@ -77,8 +77,8 @@ class BrowsePlatformFilterTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
                 ->where('filters.platform', 'youtube')
-                ->has('shows', 1)
-                ->where('shows.0.slug', $youtubeShow->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $youtubeShow->slug),
             );
     }
 
@@ -106,8 +106,8 @@ class BrowsePlatformFilterTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Browse/Index')
                 ->where('filters.platform', 'netflix')
-                ->has('shows', 1)
-                ->where('shows.0.slug', $netflixShow->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $netflixShow->slug),
             );
     }
 
@@ -134,15 +134,15 @@ class BrowsePlatformFilterTest extends TestCase
         $this->get(route('browse', ['platform' => 'youtube']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->has('shows', 1)
-                ->where('shows.0.slug', $dualSourceShow->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $dualSourceShow->slug),
             );
 
         $this->get(route('browse', ['platform' => 'netflix']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->has('shows', 1)
-                ->where('shows.0.slug', $dualSourceShow->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $dualSourceShow->slug),
             );
     }
 
@@ -167,8 +167,8 @@ class BrowsePlatformFilterTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('filters.platform', 'youtube')
                 ->where('filters.year', 1997)
-                ->has('shows', 1)
-                ->where('shows.0.slug', $youtube1997->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $youtube1997->slug),
             );
     }
 
@@ -186,8 +186,8 @@ class BrowsePlatformFilterTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.platform', null)
-                ->has('shows', 1)
-                ->where('shows.0.slug', $youtubeShow->slug),
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $youtubeShow->slug),
             );
     }
 

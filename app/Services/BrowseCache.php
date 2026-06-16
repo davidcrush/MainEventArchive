@@ -17,10 +17,11 @@ class BrowseCache
         ?int $year,
         bool $watchable,
         ?string $platform,
+        int $page,
         Closure $callback,
     ): mixed {
         return Cache::remember(
-            self::browseKey($promotionSlug, $showType, $year, $watchable, $platform),
+            self::browseKey($promotionSlug, $showType, $year, $watchable, $platform, $page),
             self::TTL_SECONDS,
             $callback,
         );
@@ -48,15 +49,17 @@ class BrowseCache
         ?int $year,
         bool $watchable,
         ?string $platform = null,
+        int $page = 1,
     ): string {
         return sprintf(
-            'browse.v%d.%s.%s.%s.%s.%s',
+            'browse.v%d.%s.%s.%s.%s.%s.page.%d',
             self::version(),
             $promotionSlug,
             $showType,
             $year ?? 'all',
             $watchable ? 'watchable' : 'all',
             $platform ?? 'all',
+            $page,
         );
     }
 

@@ -1,5 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import BrowseFilterSelect from '@/Components/BrowseFilterSelect';
+import BrowsePagination, { PaginatedShows } from '@/Components/BrowsePagination';
 import ShowCard, { ShowCardData } from '@/Components/ShowCard';
 import { router } from '@inertiajs/react';
 import { Box, Flex, Heading, SimpleGrid, Text } from '@chakra-ui/react';
@@ -35,7 +36,7 @@ export default function BrowseIndex({
     years,
     filters,
 }: {
-    shows: ShowCardData[];
+    shows: PaginatedShows<ShowCardData>;
     promotions: Promotion[];
     years: number[];
     filters: { promotion: string; year: number | null; show_type: string; watchable: boolean; platform: string | null };
@@ -47,6 +48,7 @@ export default function BrowseIndex({
             year: filters.year?.toString() ?? '',
             watchable: filters.watchable ? '1' : '',
             platform: filters.platform ?? '',
+            page: shows.meta.current_page > 1 ? String(shows.meta.current_page) : '',
             ...overrides,
         };
 
@@ -56,19 +58,22 @@ export default function BrowseIndex({
             year: merged.year || undefined,
             watchable: merged.watchable === '1' ? '1' : undefined,
             platform: merged.platform || undefined,
+            page: merged.page && Number(merged.page) > 1 ? merged.page : undefined,
         };
     };
 
     const updateFilter = (key: string, value: string) => {
-        router.get(route('browse'), buildBrowseQuery({ [key]: value }), { preserveState: true });
+        router.get(route('browse'), buildBrowseQuery({ [key]: value, page: '' }), { preserveState: true });
     };
 
     const promotionOptions = useMemo(
-        () =>
-            promotions.map((promotion) => ({
+        () => [
+            { label: 'Promotion: All', value: 'all' },
+            ...promotions.map((promotion) => ({
                 label: `Promotion: ${promotion.name}`,
                 value: promotion.slug,
             })),
+        ],
         [promotions],
     );
 
@@ -137,14 +142,17 @@ export default function BrowseIndex({
                 </Flex>
             </Box>
 
-            {shows.length === 0 ? (
+            {shows.data.length === 0 ? (
                 <Text color="mea.muted">No published shows match these filters yet.</Text>
             ) : (
-                <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={5}>
-                    {shows.map((show) => (
-                        <ShowCard key={show.id} show={show} />
-                    ))}
-                </SimpleGrid>
+                <>
+                    <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={5}>
+                        {shows.data.map((show) => (
+                            <ShowCard key={show.id} show={show} />
+                        ))}
+                    </SimpleGrid>
+                    <BrowsePagination links={shows.links} meta={shows.meta} />
+                </>
             )}
         </AppLayout>
     );
