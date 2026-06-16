@@ -36,7 +36,6 @@ interface ShowData {
     on_watchlist?: boolean;
     is_watched?: boolean;
     watch_targets?: WatchTarget[];
-    video?: { url: string } | null;
 }
 
 function formatShowDate(date: string): string {

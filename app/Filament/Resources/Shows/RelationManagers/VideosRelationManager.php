@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\Shows\RelationManagers;
 
-use App\Models\Video;
 use App\Services\Streaming\NetflixUrlParser;
+use App\Services\YouTube\YouTubeUrlParser;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -14,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use InvalidArgumentException;
 
 class VideosRelationManager extends RelationManager
 {
@@ -25,16 +27,30 @@ class VideosRelationManager extends RelationManager
     {
         return $schema
             ->components([
+                Select::make('provider')
+                    ->label('Platform')
+                    ->options([
+                        'netflix' => 'Netflix',
+                        'youtube' => 'YouTube',
+                    ])
+                    ->required()
+                    ->default('netflix')
+                    ->live(),
                 TextInput::make('url')
-                    ->label('Netflix URL or title ID')
-                    ->helperText('Paste a Netflix watch/title URL or numeric title ID.')
+                    ->label(fn ($get): string => $get('provider') === 'youtube'
+                        ? 'YouTube URL or video ID'
+                        : 'Netflix URL or title ID')
+                    ->helperText(fn ($get): string => $get('provider') === 'youtube'
+                        ? 'Paste a YouTube watch/youtu.be URL or 11-character video ID.'
+                        : 'Paste a Netflix watch/title URL or numeric title ID.')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('title')
                     ->label('Source title (optional)')
                     ->maxLength(255),
                 Toggle::make('is_primary')
-                    ->label('Primary Netflix link')
+                    ->label('Primary link for this platform')
+                    ->helperText('When multiple links exist for the same platform, the primary link is preferred.')
                     ->default(true),
             ]);
     }
@@ -77,18 +93,16 @@ class VideosRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Add Netflix link')
-                    ->mutateFormDataUsing(fn (array $data): array => $this->mutateNetflixFormData($data)),
+                    ->label('Add video link')
+                    ->mutateFormDataUsing(fn (array $data): array => $this->mutateVideoFormData($data)),
             ])
             ->recordActions([
                 EditAction::make()
-                    ->visible(fn (Video $record): bool => $record->provider === 'netflix')
-                    ->mutateFormDataUsing(fn (array $data): array => $this->mutateNetflixFormData($data)),
-                DeleteAction::make()
-                    ->visible(fn (Video $record): bool => $record->provider === 'netflix'),
+                    ->mutateFormDataUsing(fn (array $data): array => $this->mutateVideoFormData($data)),
+                DeleteAction::make(),
             ])
             ->emptyStateHeading('No videos linked')
-            ->emptyStateDescription('Add a Netflix deep link, run videos:import-netflix, or sync YouTube playlists.')
+            ->emptyStateDescription('Add Netflix or YouTube links, run videos:import-netflix, or sync YouTube playlists.')
             ->paginated([10, 25, 50]);
     }
 
@@ -96,15 +110,25 @@ class VideosRelationManager extends RelationManager
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function mutateNetflixFormData(array $data): array
+    private function mutateVideoFormData(array $data): array
     {
-        $reference = app(NetflixUrlParser::class)->parse((string) ($data['url'] ?? ''));
+        $provider = (string) ($data['provider'] ?? 'netflix');
 
-        $data['provider'] = 'netflix';
+        try {
+            $reference = match ($provider) {
+                'youtube' => app(YouTubeUrlParser::class)->parse((string) ($data['url'] ?? '')),
+                'netflix' => app(NetflixUrlParser::class)->parse((string) ($data['url'] ?? '')),
+                default => throw new InvalidArgumentException("Unsupported provider [{$provider}]."),
+            };
+        } catch (InvalidArgumentException $exception) {
+            throw $exception;
+        }
+
+        $data['provider'] = $provider;
         $data['external_id'] = $reference['external_id'];
         $data['url'] = $reference['url'];
         $data['match_id'] = null;
-        $data['embeddable'] = false;
+        $data['embeddable'] = $provider === 'youtube';
         $data['last_verified_at'] = now();
 
         return $data;

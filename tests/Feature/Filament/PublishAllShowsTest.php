@@ -87,7 +87,7 @@ class PublishAllShowsTest extends TestCase
             'date' => '1996-07-07',
         ]);
 
-        $keyBefore = BrowseCache::browseKey('wcw', 'ppv', null, false);
+        $keyBefore = BrowseCache::browseKey('wcw', 'ppv', null, false, null);
 
         $this->get(route('browse'))
             ->assertOk()
@@ -100,10 +100,10 @@ class PublishAllShowsTest extends TestCase
             ->callAction('publishAll')
             ->assertNotified('Published');
 
-        $keyAfter = BrowseCache::browseKey('wcw', 'ppv', null, false);
+        $keyAfter = BrowseCache::browseKey('wcw', 'ppv', null, false, null);
 
-        $this->assertSame('browse.v1.wcw.ppv.all.all', $keyBefore);
-        $this->assertSame('browse.v2.wcw.ppv.all.all', $keyAfter);
+        $this->assertSame('browse.v1.wcw.ppv.all.all.all', $keyBefore);
+        $this->assertSame('browse.v2.wcw.ppv.all.all.all', $keyAfter);
 
         $this->get(route('browse'))
             ->assertOk()

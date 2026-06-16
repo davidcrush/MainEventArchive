@@ -17,13 +17,13 @@ class BrowseCacheTest extends TestCase
 
     public function test_invalidate_bumps_version_used_in_browse_keys(): void
     {
-        $keyBefore = BrowseCache::browseKey('wcw', 'ppv', null, false);
+        $keyBefore = BrowseCache::browseKey('wcw', 'ppv', null, false, null);
 
         BrowseCache::invalidate();
 
-        $keyAfter = BrowseCache::browseKey('wcw', 'ppv', null, false);
+        $keyAfter = BrowseCache::browseKey('wcw', 'ppv', null, false, null);
 
-        $this->assertSame('browse.v1.wcw.ppv.all.all', $keyBefore);
-        $this->assertSame('browse.v2.wcw.ppv.all.all', $keyAfter);
+        $this->assertSame('browse.v1.wcw.ppv.all.all.all', $keyBefore);
+        $this->assertSame('browse.v2.wcw.ppv.all.all.all', $keyAfter);
     }
 }

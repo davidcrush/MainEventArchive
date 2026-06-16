@@ -119,6 +119,17 @@ class Show extends Model
         return $query->whereHas('videos', fn ($q) => $q->whereNull('match_id'));
     }
 
+    /**
+     * @param  Builder<Show>  $query
+     * @return Builder<Show>
+     */
+    public function scopeWithVideoProvider(Builder $query, string $provider): Builder
+    {
+        return $query->whereHas('videos', fn ($q) => $q
+            ->whereNull('match_id')
+            ->where('provider', $provider));
+    }
+
     protected function casts(): array
     {
         return [

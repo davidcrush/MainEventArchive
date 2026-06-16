@@ -23,6 +23,12 @@ const watchableOptions = [
     { label: 'Availability: Watchable only', value: '1' },
 ];
 
+const platformOptions = [
+    { label: 'Platform: All', value: '' },
+    { label: 'Platform: YouTube', value: 'youtube' },
+    { label: 'Platform: Netflix', value: 'netflix' },
+];
+
 export default function BrowseIndex({
     shows,
     promotions,
@@ -32,7 +38,7 @@ export default function BrowseIndex({
     shows: ShowCardData[];
     promotions: Promotion[];
     years: number[];
-    filters: { promotion: string; year: number | null; show_type: string; watchable: boolean };
+    filters: { promotion: string; year: number | null; show_type: string; watchable: boolean; platform: string | null };
 }) {
     const buildBrowseQuery = (overrides: Partial<Record<string, string>> = {}) => {
         const merged = {
@@ -40,6 +46,7 @@ export default function BrowseIndex({
             show_type: filters.show_type,
             year: filters.year?.toString() ?? '',
             watchable: filters.watchable ? '1' : '',
+            platform: filters.platform ?? '',
             ...overrides,
         };
 
@@ -48,6 +55,7 @@ export default function BrowseIndex({
             show_type: merged.show_type,
             year: merged.year || undefined,
             watchable: merged.watchable === '1' ? '1' : undefined,
+            platform: merged.platform || undefined,
         };
     };
 
@@ -82,7 +90,7 @@ export default function BrowseIndex({
                 Browse Catalog
             </Heading>
             <Text color="mea.muted" mb={8} fontSize="md">
-                Filter WCW PPVs by promotion, year, and show type
+                Filter shows by promotion, year, type, availability, and streaming platform
             </Text>
 
             <Box
@@ -119,6 +127,12 @@ export default function BrowseIndex({
                         value={filters.watchable ? '1' : ''}
                         options={watchableOptions}
                         onChange={(value) => updateFilter('watchable', value)}
+                    />
+                    <BrowseFilterSelect
+                        label="Platform"
+                        value={filters.platform ?? ''}
+                        options={platformOptions}
+                        onChange={(value) => updateFilter('platform', value)}
                     />
                 </Flex>
             </Box>

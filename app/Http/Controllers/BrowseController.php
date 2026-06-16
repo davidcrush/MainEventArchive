@@ -12,14 +12,17 @@ use Inertia\Response;
 
 class BrowseController extends Controller
 {
+    private const PLATFORM_FILTERS = ['youtube', 'netflix'];
+
     public function __invoke(Request $request): Response
     {
         $promotionSlug = $request->string('promotion', 'wcw')->toString();
         $year = $request->integer('year') ?: null;
         $showType = $request->string('show_type', 'ppv')->toString();
         $watchable = $request->boolean('watchable');
+        $platform = $this->resolvePlatformFilter($request->string('platform')->toString());
 
-        $shows = BrowseCache::rememberBrowse($promotionSlug, $showType, $year, $watchable, function () use ($promotionSlug, $year, $showType, $watchable) {
+        $shows = BrowseCache::rememberBrowse($promotionSlug, $showType, $year, $watchable, $platform, function () use ($promotionSlug, $year, $showType, $watchable, $platform) {
             $query = Show::query()
                 ->published()
                 ->with('promotion')
@@ -34,6 +37,10 @@ class BrowseController extends Controller
 
             if ($watchable) {
                 $query->watchable();
+            }
+
+            if ($platform !== null) {
+                $query->withVideoProvider($platform);
             }
 
             return ShowCardResource::collection($query->get())->resolve();
@@ -56,7 +63,17 @@ class BrowseController extends Controller
                 'year' => $year,
                 'show_type' => $showType,
                 'watchable' => $watchable,
+                'platform' => $platform,
             ],
         ]);
+    }
+
+    private function resolvePlatformFilter(string $platform): ?string
+    {
+        if ($platform === '' || ! in_array($platform, self::PLATFORM_FILTERS, true)) {
+            return null;
+        }
+
+        return $platform;
     }
 }

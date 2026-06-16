@@ -46,17 +46,6 @@ class ShowResource extends JsonResource
                 fn ($target) => $target->toArray(),
                 app(WatchTargetResolver::class)->resolveAll($this->resource),
             ),
-            'video' => $this->whenLoaded('videos', function () {
-                $video = $this->videos->firstWhere('is_primary', true) ?? $this->videos->first();
-
-                if ($video === null) {
-                    return null;
-                }
-
-                return [
-                    'url' => $video->url,
-                ];
-            }),
         ];
     }
 

@@ -116,14 +116,30 @@ Used on the promotions index, browse/show cards, home carousel, and match rows (
 
 ## YouTube link-out
 
-MEA links out to YouTube for full-show viewing when a primary YouTube video exists; we never host video.
+MEA links out to YouTube for full-show viewing when a show-level YouTube video exists; we never host video.
 
 - **UI:** YouTube full logo on black button (matches Netflix pattern) + “Opens on YouTube.com · new tab” trust line
 - **Assets:** white full logo PNG from [YouTube Brand Resources](https://www.youtube.com/howyoutubeworks/resources/brand-resources/) at `resources/images/third-party/youtube-logo-full-white.png`
 - **Allowed:** outbound link with `rel="noopener noreferrer"`; store `provider`, `external_id`, `url` on `videos` only
+- **Staff entry:** Filament show **Videos** relation (platform selector) or `videos:sync-youtube-playlist`
 - **Not allowed:** implying YouTube partnership; caching YouTube metadata beyond link fields
 
 See [`docs/architecture/video-providers.md`](../architecture/video-providers.md).
+
+## Multi-platform “Where to watch”
+
+Shows may have **multiple show-level `videos` rows** — typically one per platform (e.g. Netflix deep link + YouTube full event). The public show page uses `watch_targets[]`, not a single video URL.
+
+| Layer | Behavior |
+|-------|----------|
+| **Database** | `Show` `hasMany` `Video`; unique on `(provider, external_id)` allows one Netflix row and one YouTube row per show |
+| **Resolver** | [`WatchTargetResolver`](../../app/Services/Streaming/WatchTargetResolver.php) returns YouTube first (when curated), then Netflix deep link or WWE search fallback |
+| **UI** | [`VideoPlaceholder`](../../resources/js/Components/VideoPlaceholder.tsx) renders a button per target side-by-side |
+| **`is_primary`** | Per platform — marks the preferred link when multiple rows share the same `provider` |
+
+Import pipelines are independent: `videos:import-netflix` and `videos:sync-youtube-playlist` upsert their own provider without removing the other.
+
+**Example dual-source show:** `vengeance-2001` (Netflix curated + YouTube link when staff/sync adds one).
 
 ## Legal note
 
