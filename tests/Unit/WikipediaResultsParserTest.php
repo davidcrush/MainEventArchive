@@ -257,6 +257,154 @@ WIKI;
         $this->assertSame(1, $matches[0]->winnerSide);
     }
 
+    public function test_parses_in_your_house_template_with_free_for_all_and_post_show_dark_matches(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+|note1=ffa
+|match1=[[Rocky Maivia]] defeated [[Salvatore Sincere]] by disqualification
+|stip1=Singles match
+|time1=6:01
+|match2=[[Flash Funk]] defeated [[Leif Cassidy]]
+|stip2=Singles match
+|time2=10:34
+|note7=dark
+|match7=[[Brakkus]] defeated [[Dr. X]]
+|stip7=Singles match
+|time7=5:25
+|note8=dark
+|match8=[[Stone Cold Steve Austin]] defeated [[Goldust]]
+|stip8=Singles match
+|time8=12:18
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(4, $matches);
+
+        $this->assertFalse($matches[0]->isPpv);
+        $this->assertSame(1, $matches[0]->cardOrder);
+        $this->assertSame('Rocky Maivia', $matches[0]->participants[0]['name']);
+
+        $this->assertTrue($matches[1]->isPpv);
+        $this->assertSame(2, $matches[1]->cardOrder);
+
+        $this->assertFalse($matches[2]->isPpv);
+        $this->assertSame(7, $matches[2]->cardOrder);
+
+        $this->assertFalse($matches[3]->isPpv);
+        $this->assertSame(8, $matches[3]->cardOrder);
+    }
+
+    public function test_parses_wikitable_free_for_all_suffix_as_pre_show(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{| class="wikitable"
+|-
+! No.
+! Results
+! Stipulations
+! Times
+|-
+|1F
+|[[Rocky Maivia]] defeated [[Salvatore Sincere]] by disqualification
+|Singles match
+|6:01
+|-
+|1
+|[[Flash Funk]] defeated [[Leif Cassidy]]
+|Singles match
+|10:34
+|}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(2, $matches);
+        $this->assertFalse($matches[0]->isPpv);
+        $this->assertTrue($matches[1]->isPpv);
+    }
+
+    public function test_parses_wwe_heat_template_note_as_pre_show(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+|note1=heat
+|match1=[[Trish Stratus]], [[Jacqueline]] and [[Molly Holly]] defeated [[Ivory (wrestler)|Ivory]], [[Lita (wrestler)|Lita]] and [[Tori (wrestler)|Tori]]
+|stip1=[[Professional wrestling tag team match types#Multiple man teamed matches|Six-woman tag team match]]
+|time1=04:12
+|match2=[[The Rock]] defeated [[Booker T (wrestler)|Booker T]]
+|stip2=Singles match
+|time2=12:30
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(2, $matches);
+        $this->assertFalse($matches[0]->isPpv);
+        $this->assertSame(1, $matches[0]->cardOrder);
+        $this->assertTrue($matches[1]->isPpv);
+    }
+
+    public function test_parses_wikitable_heat_suffix_as_pre_show(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{| class="wikitable"
+|-
+! No.
+! Results
+! Stipulations
+! Times
+|-
+|1H
+|[[Trish Stratus]], [[Jacqueline]] and [[Molly Holly]] defeated [[Ivory (wrestler)|Ivory]], [[Lita (wrestler)|Lita]] and [[Tori (wrestler)|Tori]]
+|Six-woman tag team match
+|4:12
+|-
+|1
+|[[The Rock]] defeated [[Booker T (wrestler)|Booker T]]
+|Singles match
+|12:30
+|}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(2, $matches);
+        $this->assertFalse($matches[0]->isPpv);
+        $this->assertSame(1, $matches[0]->cardOrder);
+        $this->assertTrue($matches[1]->isPpv);
+    }
+
+    public function test_ignores_battle_royal_entrant_footnotes_when_parsing_last_elimination(): void
+    {
+        $wikitext = <<<'WIKI'
+== Results ==
+{{Pro Wrestling results table
+|match6 = [[Test (wrestler)|Test]] (Alliance) won by last eliminating [[Billy Gunn]] (WWF)<ref group=Note>The other participants were [[John Layfield|Bradshaw]] (WWF), [[Faarooq]] (WWF), [[Lance Storm]] (Alliance), [[Billy Kidman]] (Alliance), [[Diamond Dallas Page]] (Alliance), [[Matt Bloom|Albert]] (WWF), [[Tazz]], [[Perry Saturn]] (WWF), [[Scott Levy|Raven]] (Alliance), [[Chuck Palumbo]] (WWF), [[Crash Holly]] (WWF), [[Justin Credible]] (Alliance), [[Shawn Stasiak]] (Alliance), [[Stevie Richards|Steven Richards]] (Alliance), [[Tommy Dreamer]] (Alliance), [[Gregory Helms|The Hurricane]] (Alliance), [[Spike Dudley]] (WWF), [[Hugh Morrus]], [[Chavo Guerrero]], and [[Shoichi Funaki|Funaki]] (WWF). Tazz, Morrus, and Guerrero entered the match after it had begun, although they all departed from the Alliance at different points in the week prior to Survivor Series; thus, they were referred to as "wild cards" by the commentators at the event.</ref>
+|stip6 = Immunity Battle Royal
+|time6 = 10:00
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext, 'Survivor Series (2001)', 'Survivor Series 2001');
+
+        $this->assertCount(1, $matches);
+        $this->assertSame('battle_royal', $matches[0]->matchType);
+        $this->assertSame('Test', $matches[0]->participants[0]['name']);
+        $this->assertSame('Billy Gunn', $matches[0]->participants[1]['name']);
+        $this->assertLessThan(255, strlen($matches[0]->participants[1]['name']));
+        $this->assertGreaterThanOrEqual(4, count($matches[0]->entrantNames));
+        $this->assertContains('Bradshaw', $matches[0]->entrantNames);
+        $this->assertNotContains('Test', $matches[0]->entrantNames);
+    }
+
     public function test_scopes_results_to_event_subsection_on_multi_event_clash_pages(): void
     {
         $wikitext = <<<'WIKI'

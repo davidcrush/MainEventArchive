@@ -63,6 +63,43 @@ class SpoilerLeakageTest extends TestCase
         );
     }
 
+    public function test_battle_royal_hides_result_pairing_when_spoilers_off(): void
+    {
+        $show = $this->createPublishedShow();
+        $show->matches()->delete();
+
+        WrestlingMatch::factory()->create([
+            'show_id' => $show->id,
+            'card_order' => 1,
+            'match_type' => 'battle_royal',
+            'entrant_names' => ['Bradshaw', 'Faarooq', 'Lance Storm', 'Albert', 'Test', 'Billy Gunn'],
+            'winner_side' => 1,
+            'finish' => 'last_elimination',
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $show->matches()->first()->id,
+            'name' => 'Test',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $show->matches()->first()->id,
+            'name' => 'Billy Gunn',
+            'side' => 2,
+        ]);
+
+        $response = $this->get(route('shows.show', $show->slug));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('spoilersEnabled', false)
+            ->where('show.matches.0.participant_line', fn ($line) => str_starts_with($line, 'Battle royal featuring ')
+                && str_contains($line, 'and others')
+                && ! str_contains($line, ' vs '))
+            ->missing('show.matches.0.participants')
+            ->missing('show.matches.0.winner_side'),
+        );
+    }
+
     private function createPublishedShow(): Show
     {
         $promotion = Promotion::factory()->wcw()->create();

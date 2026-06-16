@@ -99,9 +99,10 @@ Historical or alternate names for a venue (former arena names, piped wikilink la
 | card_order | int | 1-based position |
 | match_type | string | singles, tag, triple_threat, battle_royal, segment, etc. |
 | title_name | string nullable | e.g. "WCW World Heavyweight" |
+| entrant_names | json nullable | Battle royal / Rumble entrant roster for spoiler-safe card lines (not the final-two result pairing) |
 | is_surprise | boolean | soft spoiler — omit from card when false spoilers |
 | is_rateable | boolean | false for segments in v1 |
-| is_ppv | boolean | `true` = on public card; `false` = pre-show (dark match or Main Event). Filament shows **Pre-show** badge when false |
+| is_ppv | boolean | `true` = on public card; `false` = pre-show or off-card (dark match, WCW Main Event, WWE Heat, or Free For All). Filament shows **Pre-show** badge when false |
 | winner_side | int nullable | **hard spoiler** — or use match_results table |
 | finish | string nullable | pinfall, submission, dq, etc. **hard spoiler** |
 | duration_seconds | int nullable | **hard spoiler** |

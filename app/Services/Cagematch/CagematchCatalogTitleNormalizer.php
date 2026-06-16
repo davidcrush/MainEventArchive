@@ -91,6 +91,14 @@ class CagematchCatalogTitleNormalizer
             return "Starrcade {$year}";
         }
 
+        if (preg_match('/^WrestleMania X-Seven$/i', $title) === 1) {
+            return "WrestleMania X-Seven {$year}";
+        }
+
+        if (preg_match('/^In Your House (\d+): (.+)$/i', $title, $matches) === 1) {
+            return "In Your House {$matches[1]}: {$matches[2]} {$year}";
+        }
+
         if (preg_match('/^(Halloween Havoc|Fall Brawl|Spring Stampede|Slamboree|Uncensored|Mayhem|World War 3|Beach Blast) (\d{4})$/i', $title, $matches) === 1) {
             return ucwords(strtolower($matches[1])).' '.$matches[2];
         }

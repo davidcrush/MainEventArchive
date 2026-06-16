@@ -98,6 +98,7 @@ Values like `Sold out` or empty params → `attendance` left unchanged on re-imp
 
 - World War 3 1996 match 9 — `[[The Giant]] won by last eliminating [[Lex Luger]]`
 - World War 3 1995 — `Randy Savage won by "last eliminating" [[Hulk Hogan]]`
+- Survivor Series 2001 match 6 — winner + last eliminated stored as result participants; full entrant roster from `<ref>` footnotes stored in `entrant_names` for spoiler-safe card lines
 - Royal Rumble 1996 — `[[Shawn Michaels]] won by last eliminating [[Diesel]]`
 
 ### No contest
@@ -124,17 +125,19 @@ Some WCW pages use a subtitle instead of `(Year)`:
 
 Importer tries standard `(Year)` title, event-specific variants, then Wikipedia search (`{title} WCW`).
 
-### Non-PPV matches (dark / Main Event)
+### Non-PPV matches (dark / Main Event / Heat / Free For All)
 
 Template `noteN` values:
 
 | `noteN` | Meaning | `is_ppv` |
 |---------|---------|----------|
-| `dark` | Dark match before broadcast | `false` |
+| `dark` | Dark match (before broadcast or after the PPV, e.g. In Your House post-show) | `false` |
 | `wcwme` | Aired on WCW Main Event before PPV | `false` |
+| `heat` | Aired on WWE Sunday Night Heat before PPV | `false` |
+| `ffa` | Aired on WWE Free For All before PPV (In Your House era) | `false` |
 | (none) | PPV match | `true` |
 
-Wikitable suffixes: `1D` (dark), `2ME` (Main Event) → `is_ppv = false`.
+Wikitable suffixes: `1D` (dark), `2ME` (Main Event), `1H` (Heat), `1F` (Free For All) → `is_ppv = false`.
 
 **Public site:** only `is_ppv = true` matches appear on the show card. Admin shows all matches for verification.
 
@@ -144,7 +147,7 @@ Document here when import fails or partial data is expected. Staff can complete 
 
 | Format | Notes | Example source |
 |--------|-------|----------------|
-| **Full entrant list (footnote)** | Match row has winner + last eliminated; full roster in `{{note\|N\|N}}Other competitors were [[A]], [[B]], ...` linked via `{{Ref\|N\|N}}` in stipulation | World War 3 1996 match 9 (~60 entrants) |
+| **Full entrant list (footnote)** | Match row has winner + last eliminated; full roster in `<ref>…</ref>` on the match line | Imported to `matches.entrant_names`; result participants stay winner + last eliminated only |
 | **Final four** | Winner plus three remaining wrestlers before final elimination | TBD — add when found |
 | **Winner only** | `[[Winner]] won` with no runner-up | TBD — add when found |
 | **Draw / no contest** | `vs.` without `defeated` | Parsed when line contains `ended in a no contest` |
@@ -174,7 +177,7 @@ Title name extracted from `for the …` in stipulation when present.
 
 - One bad row currently fails the **entire show** import (transaction rolls back). Fix parser or enter that match manually, then re-import.
 - Re-import **replaces** all matches on the show.
-- Dark / Main Event matches: `noteN = dark` or `noteN = wcwme` sets `is_ppv = false` (hidden on public card; visible in admin).
+- Dark / Main Event / Heat / Free For All matches: `noteN = dark`, `noteN = wcwme`, `noteN = heat`, or `noteN = ffa` sets `is_ppv = false` (hidden on public card; visible in admin).
 
 ## Adding a new edge case
 

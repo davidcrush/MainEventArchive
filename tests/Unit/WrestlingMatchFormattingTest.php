@@ -79,4 +79,65 @@ class WrestlingMatchFormattingTest extends TestCase
 
         $this->assertSame('The Giant def. Lex Luger via last elimination', $match->fresh()->resultLine());
     }
+
+    public function test_spoiler_safe_participant_line_features_non_finalists_when_entrant_list_exists(): void
+    {
+        $match = WrestlingMatch::factory()->create([
+            'match_type' => 'battle_royal',
+            'entrant_names' => [
+                'Bradshaw',
+                'Faarooq',
+                'Lance Storm',
+                'Billy Kidman',
+                'Diamond Dallas Page',
+                'Albert',
+                'Test',
+                'Billy Gunn',
+            ],
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Test',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Billy Gunn',
+            'side' => 2,
+        ]);
+
+        $line = $match->fresh()->spoilerSafeParticipantLine();
+
+        $this->assertStringStartsWith('Battle royal featuring ', $line);
+        $this->assertStringContainsString('and others', $line);
+        $this->assertStringNotContainsString(' vs ', $line);
+        $this->assertStringNotContainsString('Test', $line);
+        $this->assertStringNotContainsString('Billy Gunn', $line);
+        $this->assertStringContainsString('Albert', $line);
+        $this->assertStringContainsString('Bradshaw', $line);
+    }
+
+    public function test_spoiler_safe_participant_line_falls_back_to_featuring_when_only_finalists_known(): void
+    {
+        $match = WrestlingMatch::factory()->create([
+            'match_type' => 'battle_royal',
+        ]);
+
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Test',
+            'side' => 1,
+        ]);
+        MatchParticipant::factory()->create([
+            'match_id' => $match->id,
+            'name' => 'Billy Gunn',
+            'side' => 2,
+        ]);
+
+        $this->assertSame(
+            'Battle royal featuring Billy Gunn, Test, and others',
+            $match->fresh()->spoilerSafeParticipantLine(),
+        );
+    }
 }

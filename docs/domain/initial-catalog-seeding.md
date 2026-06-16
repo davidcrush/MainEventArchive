@@ -188,11 +188,17 @@ vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=1996 --to=200
 
 Browse at `/browse?promotion=wwe`. Bulk Wikipedia import **requires** `--promotion` so WCW and WWE shows in the same year range are not cross-enriched.
 
-### YouTube (dry-run first)
+WWE PPV show pages show **Watch on Netflix** (search for the show title) when no YouTube link exists. Optional deep links: save Netflix HTML and run `videos:import-netflix`, or add URLs in Filament.
+
+**Which Netflix page to save:** Search results (`/search?q=WWE`) work and parse `jbv=` title IDs, but titles are usually series names (e.g. “WWE Survivor Series”) without a year — poor match to catalog rows like “Survivor Series 2001”. For deep links, open each PPV **series** on Netflix (Survivor Series, Royal Rumble, SummerSlam, etc.), scroll to load all years, save that page, and import each file (or combine HTML). MHTML and “Webpage, HTML only” both work. Always dry-run first.
+
+### YouTube and Netflix (dry-run first)
 
 ```bash
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=wcw_clash --dry-run
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=wcw_nitro --dry-run
+vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wwe --playlist=wwe_ppv --dry-run
+vendor/bin/sail artisan videos:import-netflix --html=storage/app/netflix/wwe-ppv.html --promotion=wwe --dry-run
 ```
 
 Remove `--dry-run` after reviewing matches. Requires playlist IDs in `.env` — see [.env.example](../../.env.example).

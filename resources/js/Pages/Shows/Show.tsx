@@ -3,7 +3,7 @@ import CagematchBadge from '@/Components/CagematchBadge';
 import MatchRow, { MatchData } from '@/Components/MatchRow';
 import RatingStars from '@/Components/RatingStars';
 import SpoilerToggle from '@/Components/SpoilerToggle';
-import VideoPlaceholder from '@/Components/VideoPlaceholder';
+import VideoPlaceholder, { WatchTarget } from '@/Components/VideoPlaceholder';
 import WikidataSourceBadge from '@/Components/WikidataSourceBadge';
 import WikipediaSourceBadge, { isWikipediaSourceUrl } from '@/Components/WikipediaSourceBadge';
 import { Link, router } from '@inertiajs/react';
@@ -35,6 +35,7 @@ interface ShowData {
     rating_count?: number;
     on_watchlist?: boolean;
     is_watched?: boolean;
+    watch_targets?: WatchTarget[];
     video?: { url: string } | null;
 }
 
@@ -168,7 +169,7 @@ export default function ShowPage({
                     ) : null}
 
                     <Box mb={8}>
-                        <VideoPlaceholder video={show.video} />
+                        <VideoPlaceholder watchTargets={show.watch_targets ?? []} />
                     </Box>
 
                     <Flex

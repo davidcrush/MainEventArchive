@@ -21,6 +21,7 @@ export interface MatchData {
     duration_seconds?: number | null;
     rating_average?: number;
     rating_count?: number;
+    participant_line?: string;
 }
 
 function formatParticipants(participants: Participant[]): string {
@@ -84,7 +85,7 @@ export default function MatchRow({
     promotionName?: string;
 }) {
     const resultLine = spoilersEnabled ? formatResult(match) : null;
-    const participantLine = formatParticipants(match.participants ?? []);
+    const participantLine = match.participant_line ?? formatParticipants(match.participants ?? []);
 
     return (
         <Box

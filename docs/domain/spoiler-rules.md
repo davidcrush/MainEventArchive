@@ -63,6 +63,7 @@ Apply in:
 | Spoilers | Show |
 |----------|------|
 | Off | Participants, match types, titles (championship name ok) |
+| Off | Battle royals: `participant_line` only — featured entrants, not winner vs runner-up |
 | Off | No winners, finishes, durations, timestamps |
 | On | Full results + timestamps (when video exists, v1.6+) |
 

@@ -146,6 +146,7 @@ class WikipediaShowImporter implements ShowDataImporter
                     'card_order' => $parsedMatch->cardOrder,
                     'match_type' => $parsedMatch->matchType,
                     'title_name' => $parsedMatch->titleName,
+                    'entrant_names' => $parsedMatch->entrantNames !== [] ? $parsedMatch->entrantNames : null,
                     'is_rateable' => $parsedMatch->isRateable,
                     'is_ppv' => $parsedMatch->isPpv,
                     'winner_side' => $parsedMatch->winnerSide,

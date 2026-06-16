@@ -96,7 +96,7 @@ class MatchesRelationManager extends RelationManager
                     ->color(fn (WrestlingMatch $record): string => $record->is_ppv ? 'success' : 'warning')
                     ->tooltip(fn (WrestlingMatch $record): ?string => $record->is_ppv
                         ? null
-                        : 'Not on the public card — dark match or Main Event'),
+                        : 'Not on the public card — dark match, Main Event, Heat, or Free For All'),
                 TextColumn::make('participant_line')
                     ->label('Participants')
                     ->state(fn (WrestlingMatch $record): string => $record->participantLine())

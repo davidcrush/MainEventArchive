@@ -114,9 +114,12 @@ Browse Nitro with **Show Type: TV** on `/browse`. Staff publish in Filament afte
 ```bash
 vendor/bin/sail artisan db:seed --class=WwePpvCatalogSeeder
 vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=1996 --to=2001
+vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wwe --playlist=wwe_ppv --dry-run
 ```
 
-Browse at `/browse?promotion=wwe`. See [docs/domain/initial-catalog-seeding.md](docs/domain/initial-catalog-seeding.md).
+WWE PPV show pages without YouTube show **Watch on Netflix** (search fallback). Optional deep links: save a Netflix browse page as HTML and run `vendor/bin/sail artisan videos:import-netflix --html=... --promotion=wwe --dry-run`, or add links in Filament.
+
+Browse at `/browse?promotion=wwe`. Remove `--dry-run` after reviewing matches. See [docs/domain/initial-catalog-seeding.md](docs/domain/initial-catalog-seeding.md).
 
 **2. Match cards (Wikipedia)** — enriches existing shows with participants and results. Run after step 1 (or the fallback seeder). Bulk import requires `--promotion`:
 

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Show;
 use App\Models\Venue;
+use App\Services\Streaming\WatchTargetResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,6 +42,10 @@ class ShowResource extends JsonResource
             'rating_count' => $this->when(isset($this->ratings_count), (int) $this->ratings_count),
             'on_watchlist' => $this->when(isset($this->on_watchlist), (bool) $this->on_watchlist),
             'is_watched' => $this->when(isset($this->is_watched), (bool) $this->is_watched),
+            'watch_targets' => array_map(
+                fn ($target) => $target->toArray(),
+                app(WatchTargetResolver::class)->resolveAll($this->resource),
+            ),
             'video' => $this->whenLoaded('videos', function () {
                 $video = $this->videos->firstWhere('is_primary', true) ?? $this->videos->first();
 

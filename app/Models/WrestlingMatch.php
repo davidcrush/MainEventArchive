@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'card_order',
     'match_type',
     'title_name',
+    'entrant_names',
     'is_surprise',
     'is_rateable',
     'is_ppv',
@@ -73,6 +74,91 @@ class WrestlingMatch extends Model
             ->implode(' vs ');
     }
 
+    public function spoilerSafeParticipantLine(): string
+    {
+        if ($this->match_type !== 'battle_royal') {
+            return $this->participantLine();
+        }
+
+        /** @var list<string> $entrantNames */
+        $entrantNames = $this->entrant_names ?? [];
+        $resultNames = $this->participants->pluck('name')->values()->all();
+        $resultKeys = collect($resultNames)
+            ->map(fn (string $name): string => strtolower($name))
+            ->all();
+
+        $nonResultEntrants = array_values(array_filter(
+            $entrantNames,
+            fn (string $name): bool => ! in_array(strtolower($name), $resultKeys, true),
+        ));
+
+        if (count($nonResultEntrants) >= 4) {
+            sort($nonResultEntrants, SORT_NATURAL | SORT_FLAG_CASE);
+
+            return $this->formatBattleRoyalFeaturingLine(
+                array_slice($nonResultEntrants, 0, 4),
+                count($entrantNames) > 4,
+            );
+        }
+
+        if (count($entrantNames) >= 4) {
+            sort($entrantNames, SORT_NATURAL | SORT_FLAG_CASE);
+
+            return $this->formatBattleRoyalFeaturingLine(
+                array_slice($entrantNames, 0, 4),
+                count($entrantNames) > 4,
+            );
+        }
+
+        if ($entrantNames !== []) {
+            sort($entrantNames, SORT_NATURAL | SORT_FLAG_CASE);
+
+            return $this->formatBattleRoyalFeaturingLine($entrantNames, false);
+        }
+
+        if (count($resultNames) >= 2) {
+            sort($resultNames, SORT_NATURAL | SORT_FLAG_CASE);
+
+            return $this->formatBattleRoyalFeaturingLine($resultNames, true);
+        }
+
+        if (count($resultNames) === 1) {
+            return "Battle royal featuring {$resultNames[0]} and others";
+        }
+
+        return 'Battle royal';
+    }
+
+    /**
+     * @param  list<string>  $names
+     */
+    private function formatBattleRoyalFeaturingLine(array $names, bool $hasOthers): string
+    {
+        if ($names === []) {
+            return 'Battle royal';
+        }
+
+        if (count($names) === 1) {
+            return $hasOthers
+                ? "Battle royal featuring {$names[0]} and others"
+                : "Battle royal featuring {$names[0]}";
+        }
+
+        if ($hasOthers) {
+            $last = array_pop($names);
+
+            return 'Battle royal featuring '.implode(', ', $names).", {$last}, and others";
+        }
+
+        $last = array_pop($names);
+
+        if ($names === []) {
+            return "Battle royal featuring {$last}";
+        }
+
+        return 'Battle royal featuring '.implode(', ', $names)." and {$last}";
+    }
+
     public function resultLine(): string
     {
         if ($this->winner_side === null) {
@@ -126,6 +212,7 @@ class WrestlingMatch extends Model
     protected function casts(): array
     {
         return [
+            'entrant_names' => 'array',
             'is_surprise' => 'boolean',
             'is_rateable' => 'boolean',
             'is_ppv' => 'boolean',

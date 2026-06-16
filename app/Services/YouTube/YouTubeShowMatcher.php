@@ -9,6 +9,7 @@ use App\Models\Promotion;
 use App\Models\Show;
 use App\Services\Cagematch\CagematchCatalogTitleNormalizer;
 use App\Services\CatalogTitleMatcher;
+use App\Services\Wrestling\WrestleManiaEditionResolver;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -18,6 +19,7 @@ class YouTubeShowMatcher
         private YouTubeTitleParser $titleParser,
         private CagematchCatalogTitleNormalizer $titleNormalizer,
         private CatalogTitleMatcher $catalogTitleMatcher,
+        private WrestleManiaEditionResolver $wrestleManiaEditionResolver,
     ) {}
 
     /**
@@ -57,7 +59,14 @@ class YouTubeShowMatcher
                 continue;
             }
 
-            $candidates = $this->findCandidates($shows, $parsed['eventTitle'], $parsed['year'], $matchedShowIds);
+            $inYourHouse = $this->titleParser->parseInYourHouse($parsed['eventTitle']);
+            $wrestleMania = $this->wrestleManiaEditionResolver->parseStreamingTitle($entry->title);
+
+            $candidates = match (true) {
+                $inYourHouse !== null => $this->findInYourHouseCandidates($shows, $inYourHouse, $matchedShowIds),
+                $wrestleMania !== null => $this->findWrestleManiaCandidates($shows, $wrestleMania['edition'], $matchedShowIds),
+                default => $this->findCandidates($shows, $parsed['eventTitle'], $parsed['year'], $matchedShowIds),
+            };
 
             if ($candidates->count() === 1) {
                 $show = $candidates->first();
@@ -155,6 +164,60 @@ class YouTubeShowMatcher
             'skipped' => $skipped,
             'unmatchedEntries' => $unmatchedEntries,
         ];
+    }
+
+    /**
+     * @param  array{number: ?int, subtitle: ?string}  $inYourHouse
+     * @param  array<int, true>  $matchedShowIds
+     * @return Collection<int, Show>
+     */
+    private function findInYourHouseCandidates(
+        Collection $shows,
+        array $inYourHouse,
+        array $matchedShowIds,
+    ): Collection {
+        return $shows->filter(function (Show $show) use ($inYourHouse, $matchedShowIds): bool {
+            if (isset($matchedShowIds[$show->id])) {
+                return false;
+            }
+
+            $catalogParts = $this->catalogTitleMatcher->extractInYourHouseCatalogParts($show->title);
+
+            if ($catalogParts === null) {
+                return false;
+            }
+
+            if ($inYourHouse['number'] !== null) {
+                return $catalogParts['number'] === $inYourHouse['number'];
+            }
+
+            if ($inYourHouse['subtitle'] === null) {
+                return false;
+            }
+
+            return $this->catalogTitleMatcher->fuzzyPhraseMatches(
+                $inYourHouse['subtitle'],
+                $catalogParts['subtitle'],
+            );
+        })->values();
+    }
+
+    /**
+     * @param  array<int, true>  $matchedShowIds
+     * @return Collection<int, Show>
+     */
+    private function findWrestleManiaCandidates(
+        Collection $shows,
+        int $edition,
+        array $matchedShowIds,
+    ): Collection {
+        return $shows->filter(function (Show $show) use ($edition, $matchedShowIds): bool {
+            if (isset($matchedShowIds[$show->id])) {
+                return false;
+            }
+
+            return $this->wrestleManiaEditionResolver->matchesEdition($edition, $show->title);
+        })->values();
     }
 
     /**

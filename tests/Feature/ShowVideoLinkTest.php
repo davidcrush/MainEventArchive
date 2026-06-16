@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ShowStatus;
+use App\Enums\ShowType;
 use App\Models\Promotion;
 use App\Models\Show;
 use App\Models\Video;
@@ -30,7 +31,37 @@ class ShowVideoLinkTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Shows/Show')
-                ->where('show.video.url', 'https://www.youtube.com/watch?v=ftPK-rYz7Vc'),
+                ->where('show.video.url', 'https://www.youtube.com/watch?v=ftPK-rYz7Vc')
+                ->where('show.watch_targets.0.provider', 'youtube')
+                ->where('show.watch_targets.0.url', 'https://www.youtube.com/watch?v=ftPK-rYz7Vc'),
+            );
+    }
+
+    public function test_wwe_ppv_without_videos_includes_netflix_search_target(): void
+    {
+        config(['streaming.netflix.wwe_ppv_search_enabled' => true]);
+
+        $promotion = Promotion::factory()->wwe()->create();
+        $show = Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'status' => ShowStatus::Published,
+            'title' => 'Survivor Series 2001',
+            'slug' => 'survivor-series-2001-test',
+            'date' => '2001-11-18',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $this->get(route('shows.show', $show->slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Shows/Show')
+                ->where('show.video', null)
+                ->where('show.watch_targets.0.provider', 'netflix')
+                ->where('show.watch_targets.0.mode', 'search')
+                ->where(
+                    'show.watch_targets.0.url',
+                    'https://www.netflix.com/search?q=Survivor%20Series%202001',
+                ),
             );
     }
 
@@ -42,7 +73,8 @@ class ShowVideoLinkTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Shows/Show')
-                ->where('show.video', null),
+                ->where('show.video', null)
+                ->where('show.watch_targets', []),
             );
     }
 

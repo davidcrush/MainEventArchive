@@ -39,4 +39,36 @@ class CatalogTitleMatcherTest extends TestCase
             'Starrcade 1997',
         ));
     }
+
+    public function test_fuzzy_phrase_matches_minor_differences(): void
+    {
+        $this->assertTrue($this->matcher->fuzzyPhraseMatches(
+            "It's Time!",
+            "It's Time",
+        ));
+
+        $this->assertTrue($this->matcher->fuzzyPhraseMatches(
+            'A Cold Day in Hell',
+            'A Cold Day In Hell',
+        ));
+
+        $this->assertTrue($this->matcher->fuzzyPhraseMatches(
+            'Revenge of the Taker',
+            'Revenge Of The Taker',
+        ));
+
+        $this->assertFalse($this->matcher->fuzzyPhraseMatches(
+            'Final Four',
+            'Mind Games',
+        ));
+    }
+
+    public function test_extracts_in_your_house_catalog_parts(): void
+    {
+        $parts = $this->matcher->extractInYourHouseCatalogParts('In Your House 13: Final Four 1997');
+
+        $this->assertNotNull($parts);
+        $this->assertSame(13, $parts['number']);
+        $this->assertSame('Final Four', $parts['subtitle']);
+    }
 }

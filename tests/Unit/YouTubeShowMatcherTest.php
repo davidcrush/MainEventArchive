@@ -8,6 +8,7 @@ use App\Models\Promotion;
 use App\Models\Show;
 use App\Services\Cagematch\CagematchCatalogTitleNormalizer;
 use App\Services\CatalogTitleMatcher;
+use App\Services\Wrestling\WrestleManiaEditionResolver;
 use App\Services\YouTube\YouTubeShowMatcher;
 use App\Services\YouTube\YouTubeTitleParser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,6 +17,16 @@ use Tests\TestCase;
 class YouTubeShowMatcherTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function makeMatcher(): YouTubeShowMatcher
+    {
+        return new YouTubeShowMatcher(
+            new YouTubeTitleParser,
+            new CagematchCatalogTitleNormalizer,
+            new CatalogTitleMatcher,
+            new WrestleManiaEditionResolver,
+        );
+    }
 
     public function test_matches_show_by_normalized_title_and_year(): void
     {
@@ -28,11 +39,7 @@ class YouTubeShowMatcherTest extends TestCase
             'show_type' => ShowType::Ppv,
         ]);
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $result = $matcher->match($promotion, [
             new YouTubePlaylistEntry(
@@ -58,11 +65,7 @@ class YouTubeShowMatcherTest extends TestCase
             'show_type' => ShowType::Ppv,
         ]);
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $result = $matcher->match($promotion, [
             new YouTubePlaylistEntry(
@@ -93,11 +96,7 @@ class YouTubeShowMatcherTest extends TestCase
             'show_type' => ShowType::Ppv,
         ]);
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $result = $matcher->match($promotion, [
             new YouTubePlaylistEntry(
@@ -114,11 +113,7 @@ class YouTubeShowMatcherTest extends TestCase
     {
         $promotion = Promotion::factory()->wcw()->create();
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $entry = new YouTubePlaylistEntry(
             'abc12345678',
@@ -142,11 +137,7 @@ class YouTubeShowMatcherTest extends TestCase
             'show_type' => ShowType::Tv,
         ]);
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $result = $matcher->match($promotion, [
             new YouTubePlaylistEntry(
@@ -170,11 +161,7 @@ class YouTubeShowMatcherTest extends TestCase
             'show_type' => ShowType::Tv,
         ]);
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $result = $matcher->match($promotion, [
             new YouTubePlaylistEntry(
@@ -199,11 +186,7 @@ class YouTubeShowMatcherTest extends TestCase
             'show_type' => ShowType::Tv,
         ]);
 
-        $matcher = new YouTubeShowMatcher(
-            new YouTubeTitleParser,
-            new CagematchCatalogTitleNormalizer,
-            new CatalogTitleMatcher,
-        );
+        $matcher = $this->makeMatcher();
 
         $result = $matcher->matchNitro($promotion, [
             new YouTubePlaylistEntry(
@@ -216,5 +199,156 @@ class YouTubeShowMatcherTest extends TestCase
         $this->assertSame('WCW Monday Nitro #37', $result['links'][0]->show->title);
         $this->assertSame([], $result['ambiguous']);
         $this->assertSame([], $result['unmatchedEntries']);
+    }
+
+    public function test_matches_wwe_ppv_by_title_and_year(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'Survivor Series 2001',
+            'date' => '2001-11-18',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->match($promotion, [
+            new YouTubePlaylistEntry(
+                'abc12345678',
+                'FULL EVENT: Survivor Series 2001 | Team WWF vs. Team Alliance and MORE!',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('Survivor Series 2001', $result['links'][0]->show->title);
+    }
+
+    public function test_matches_wwe_ppv_when_youtube_title_includes_wwe_prefix(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'SummerSlam 1998',
+            'date' => '1998-08-30',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->match($promotion, [
+            new YouTubePlaylistEntry(
+                'abc12345678',
+                'FULL EVENT: WWE SummerSlam 1998 | Undertaker vs. Kane and MORE!',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('SummerSlam 1998', $result['links'][0]->show->title);
+    }
+
+    public function test_matches_in_your_house_by_fuzzy_subtitle(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'In Your House 13: Final Four 1997',
+            'date' => '1997-02-16',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->match($promotion, [
+            new YouTubePlaylistEntry('81930499', 'In Your House - Final Four'),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('In Your House 13: Final Four 1997', $result['links'][0]->show->title);
+    }
+
+    public function test_matches_in_your_house_by_number(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'In Your House 6: Rage In The Cage 1996',
+            'date' => '1996-02-18',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->match($promotion, [
+            new YouTubePlaylistEntry('81930504', 'In Your House #6'),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('In Your House 6: Rage In The Cage 1996', $result['links'][0]->show->title);
+    }
+
+    public function test_prefers_single_in_your_house_match_when_rebroadcast_title_differs(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'In Your House 8: Beware Of Dog 1996',
+            'date' => '1996-05-26',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'In Your House 8: Beware Of Dog (Wiederholung) 1996',
+            'date' => '1996-05-28',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->match($promotion, [
+            new YouTubePlaylistEntry('81930506', 'In Your House - Beware of Dog'),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('In Your House 8: Beware Of Dog 1996', $result['links'][0]->show->title);
+        $this->assertSame([], $result['ambiguous']);
+    }
+
+    public function test_matches_wrestlemania_by_edition_number(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'WrestleMania XII 1996',
+            'date' => '1996-03-31',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'WrestleMania X-Seven 2001',
+            'date' => '2001-04-01',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->match($promotion, [
+            new YouTubePlaylistEntry('81929590', 'WrestleMania 12'),
+            new YouTubePlaylistEntry('81929596', 'WrestleMania 17'),
+        ]);
+
+        $this->assertCount(2, $result['links']);
+        $this->assertSame(
+            ['WrestleMania XII 1996', 'WrestleMania X-Seven 2001'],
+            collect($result['links'])->map(fn ($link) => $link->show->title)->all(),
+        );
     }
 }

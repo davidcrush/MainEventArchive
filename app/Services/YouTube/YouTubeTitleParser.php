@@ -19,8 +19,23 @@ class YouTubeTitleParser
             return null;
         }
 
-        if (preg_match('/^FULL EVENT:\s*(WCW\s+)?/i', $title) === 1) {
-            $title = preg_replace('/^FULL EVENT:\s*(WCW\s+)?/i', '', $title) ?? $title;
+        if (preg_match('/^FULL EVENT:\s*(?:(?:WCW|WWE|WWF)\s+)?/i', $title) === 1) {
+            $title = preg_replace('/^FULL EVENT:\s*(?:(?:WCW|WWE|WWF)\s+)?/i', '', $title) ?? $title;
+        }
+
+        $title = preg_replace('/^(?:WWE|WWF)\s+/i', '', $title) ?? $title;
+
+        if ($this->parseInYourHouse($title) !== null) {
+            $year = null;
+
+            if (preg_match('/\b((?:19|20)\d{2})\b/', $title, $matches) === 1) {
+                $year = (int) $matches[1];
+            }
+
+            return [
+                'eventTitle' => $title,
+                'year' => $year,
+            ];
         }
 
         $segments = preg_split('/\s+\|\s+| – | - /u', $title, 2);
@@ -45,6 +60,31 @@ class YouTubeTitleParser
             'eventTitle' => $eventTitle,
             'year' => $year,
         ];
+    }
+
+    /**
+     * @return array{number: ?int, subtitle: ?string}|null
+     */
+    public function parseInYourHouse(string $title): ?array
+    {
+        $title = html_entity_decode(trim($title), ENT_QUOTES | ENT_HTML5);
+        $title = preg_replace('/^(?:WWE|WWF)\s+/i', '', $title) ?? $title;
+
+        if (preg_match('/^In Your House\s*#\s*(\d+)\b/i', $title, $matches) === 1) {
+            return [
+                'number' => (int) $matches[1],
+                'subtitle' => null,
+            ];
+        }
+
+        if (preg_match('/^In Your House\s*(?:-\s*|:)\s*(.+)$/i', $title, $matches) === 1) {
+            return [
+                'number' => null,
+                'subtitle' => trim($matches[1]),
+            ];
+        }
+
+        return null;
     }
 
     public function isFullEventTitle(string $youtubeTitle): bool

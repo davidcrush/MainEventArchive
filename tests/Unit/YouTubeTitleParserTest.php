@@ -64,6 +64,26 @@ class YouTubeTitleParserTest extends TestCase
         $this->assertSame('1996-05-27', $airDate->toDateString());
     }
 
+    public function test_parses_wwe_full_event_title_with_year(): void
+    {
+        $parsed = $this->parser->parse(
+            'FULL EVENT: Survivor Series 2001 | Team WWF vs. Team Alliance and MORE!',
+        );
+
+        $this->assertSame('Survivor Series 2001', $parsed['eventTitle']);
+        $this->assertSame(2001, $parsed['year']);
+    }
+
+    public function test_strips_wwe_prefix_from_event_title(): void
+    {
+        $parsed = $this->parser->parse(
+            'FULL EVENT: WWE Backlash 2008 | Cena vs. Orton vs. Triple H vs. JBL, Batista vs. Cena',
+        );
+
+        $this->assertSame('Backlash 2008', $parsed['eventTitle']);
+        $this->assertSame(2008, $parsed['year']);
+    }
+
     public function test_syncable_title_includes_full_episode_when_enabled(): void
     {
         $title = 'FULL EPISODE: Hogan vs. Savage: WCW Monday Nitro, Feb. 9, 1998';

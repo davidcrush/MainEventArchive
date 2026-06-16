@@ -7,6 +7,7 @@ use App\Filament\Resources\Shows\RelationManagers\VideosRelationManager;
 use App\Models\Show;
 use App\Models\User;
 use App\Models\Video;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -37,5 +38,30 @@ class ShowVideosRelationManagerTest extends TestCase
         ])
             ->assertSuccessful()
             ->assertCanSeeTableRecords([$video]);
+    }
+
+    public function test_admin_can_create_netflix_video_from_title_id(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $show = Show::factory()->create(['title' => 'Survivor Series 2001']);
+
+        $this->actingAs($admin);
+
+        Livewire::test(VideosRelationManager::class, [
+            'ownerRecord' => $show,
+            'pageClass' => EditShow::class,
+        ])
+            ->callAction(TestAction::make('create')->table(), data: [
+                'url' => '80117477',
+                'title' => 'Survivor Series 2001',
+                'is_primary' => true,
+            ])
+            ->assertHasNoFormErrors();
+
+        $video = Video::query()->first();
+        $this->assertNotNull($video);
+        $this->assertSame('netflix', $video->provider);
+        $this->assertSame('80117477', $video->external_id);
+        $this->assertSame('https://www.netflix.com/watch/80117477', $video->url);
     }
 }

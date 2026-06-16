@@ -133,12 +133,20 @@ class WikipediaResultsParser
         int $cardOrder,
         bool $isPpv = true,
     ): ParsedWikipediaMatch {
+        $entrantNames = [];
+
+        if (preg_match('/\s+won\s+by\s+(?:"last eliminating"|last eliminating)\s+/i', $matchLine) === 1) {
+            $entrantNames = $this->extractBattleRoyalEntrantNames($matchLine);
+        }
+
+        $matchLine = $this->removeReferenceTags($matchLine);
+
         if (preg_match('/\s+defeated\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
             return $this->parseStandardMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv);
         }
 
         if (preg_match('/\s+won\s+by\s+(?:"last eliminating"|last eliminating)\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
-            return $this->parseLastEliminationMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv);
+            return $this->parseLastEliminationMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv, $entrantNames);
         }
 
         if (preg_match('/\s+ended\s+in\s+a\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
@@ -203,6 +211,7 @@ class WikipediaResultsParser
         int $cardOrder,
         array $splitMatch,
         bool $isPpv,
+        array $entrantNames = [],
     ): ParsedWikipediaMatch {
         $winnerRaw = trim(substr($matchLine, 0, $splitMatch[0][1]));
         $runnerUpRaw = trim(substr($matchLine, $splitMatch[0][1] + strlen($splitMatch[0][0])));
@@ -223,6 +232,7 @@ class WikipediaResultsParser
             participants: $participants,
             finish: 'last_elimination',
             isPpv: $isPpv,
+            entrantNames: $entrantNames,
         );
     }
 
@@ -406,6 +416,9 @@ class WikipediaResultsParser
     /**
      * @param  list<array{name: string, side: int, sort_order: int}>  $participants
      */
+    /**
+     * @param  list<string>  $entrantNames
+     */
     private function buildParsedMatch(
         int $cardOrder,
         string $stipulation,
@@ -414,6 +427,7 @@ class WikipediaResultsParser
         string $finish,
         bool $isPpv = true,
         ?int $winnerSide = 1,
+        array $entrantNames = [],
     ): ParsedWikipediaMatch {
         $cleanStipulation = $this->stripWikiMarkup($stipulation);
 
@@ -427,12 +441,30 @@ class WikipediaResultsParser
             durationSeconds: $this->parseDuration($time),
             isRateable: ! str_contains(strtolower($cleanStipulation), 'dark match'),
             isPpv: $isPpv,
+            entrantNames: $entrantNames,
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractBattleRoyalEntrantNames(string $matchLine): array
+    {
+        if (preg_match('/<ref[^>]*>(.*?)<\/ref>/is', $matchLine, $refMatch) !== 1) {
+            return [];
+        }
+
+        $names = $this->extractMemberNames($refMatch[1]);
+
+        return array_values(array_filter(
+            $names,
+            static fn (string $name): bool => $name !== '',
+        ));
     }
 
     private function resolveIsPpv(string $note): bool
     {
-        return ! in_array($note, ['dark', 'wcwme'], true);
+        return ! in_array($note, ['dark', 'wcwme', 'heat', 'ffa'], true);
     }
 
     /**
@@ -470,7 +502,7 @@ class WikipediaResultsParser
             $resultCell = $cells[1] ?? '';
             $stipulation = $cells[2] ?? '';
             $time = $cells[3] ?? '';
-            $isPpv = preg_match('/(?:D|ME)$/i', $rawNumber) !== 1;
+            $isPpv = preg_match('/(?:D|ME|H|F)$/i', $rawNumber) !== 1;
 
             $cleanResult = strtolower($this->stripWikiMarkup($resultCell));
 
@@ -494,14 +526,21 @@ class WikipediaResultsParser
 
     private function stripWikiMarkup(string $value): string
     {
-        $value = preg_replace('/<!--.*?-->/s', '', $value) ?? $value;
-        $value = preg_replace('/<ref[^>]*\/>/is', '', $value) ?? $value;
-        $value = preg_replace('/<ref[^>]*>.*?<\/ref>/is', '', $value) ?? $value;
-        $value = preg_replace('/<ref[^>]*>.*/is', '', $value) ?? $value;
+        $value = $this->removeReferenceTags($value);
         $value = preg_replace('/\{\{[^}]+\}\}/', '', $value) ?? $value;
         $value = preg_replace('/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/', '$1', $value) ?? $value;
         $value = preg_replace("/'''+/", '', $value) ?? $value;
         $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+
+        return trim($value);
+    }
+
+    private function removeReferenceTags(string $value): string
+    {
+        $value = preg_replace('/<!--.*?-->/s', '', $value) ?? $value;
+        $value = preg_replace('/<ref[^>]*\/>/is', '', $value) ?? $value;
+        $value = preg_replace('/<ref[^>]*>.*?<\/ref>/is', '', $value) ?? $value;
+        $value = preg_replace('/<ref[^>]*>.*/is', '', $value) ?? $value;
 
         return trim($value);
     }

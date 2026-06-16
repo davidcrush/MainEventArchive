@@ -97,4 +97,40 @@ class SyncYouTubePlaylistCommandTest extends TestCase
             '--source' => 'html',
         ])->assertFailed();
     }
+
+    public function test_sync_wwe_playlist_creates_video_from_api_response(): void
+    {
+        config(['youtube.api_key' => 'test-api-key']);
+
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'Royal Rumble 1991',
+            'date' => '1991-01-19',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        Http::fake([
+            'www.googleapis.com/youtube/v3/playlistItems*' => Http::response([
+                'items' => [
+                    [
+                        'snippet' => [
+                            'title' => 'FULL EVENT: Royal Rumble 1991 | Warrior vs. Slaughter; 30-Man Royal Rumble Match and MORE',
+                            'resourceId' => ['videoId' => 'P-0JmpmHf4A'],
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $this->artisan('videos:sync-youtube-playlist', [
+            '--promotion' => 'wwe',
+            '--playlist' => 'wwe_ppv',
+            '--source' => 'api',
+        ])->assertSuccessful();
+
+        $this->assertSame(1, Video::query()->count());
+        $this->assertSame('P-0JmpmHf4A', Video::query()->value('external_id'));
+    }
 }

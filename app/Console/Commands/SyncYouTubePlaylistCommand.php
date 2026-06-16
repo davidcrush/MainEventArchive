@@ -21,7 +21,7 @@ class SyncYouTubePlaylistCommand extends Command
                             {--html= : Path to saved playlist HTML (required when --source=html)}
                             {--dry-run : Preview matches without writing to the database}';
 
-    protected $description = 'Sync full-show YouTube links from a WCW playlist into catalog videos (idempotent; scheduled monthly in production)';
+    protected $description = 'Sync full-show YouTube links from a promotion playlist into catalog videos (idempotent; scheduled monthly in production for WCW PPV)';
 
     public function handle(
         YouTubePlaylistClient $client,

@@ -25,16 +25,21 @@ class MatchResource extends JsonResource
             'match_type' => $this->match_type,
             'title_name' => $this->title_name,
             'is_rateable' => $this->is_rateable,
-            'participants' => $this->whenLoaded(
+            'rating_average' => $this->when(isset($this->ratings_avg_stars), round((float) $this->ratings_avg_stars, 1)),
+            'rating_count' => $this->when(isset($this->ratings_count), (int) $this->ratings_count),
+        ];
+
+        if (! $spoilers->isEnabled() && $this->match_type === 'battle_royal') {
+            $data['participant_line'] = $this->spoilerSafeParticipantLine();
+        } else {
+            $data['participants'] = $this->whenLoaded(
                 'participants',
                 fn () => $this->participants
                     ->map(fn (MatchParticipant $participant) => $this->formatParticipant($participant, $spoilers))
                     ->values()
                     ->all(),
-            ),
-            'rating_average' => $this->when(isset($this->ratings_avg_stars), round((float) $this->ratings_avg_stars, 1)),
-            'rating_count' => $this->when(isset($this->ratings_count), (int) $this->ratings_count),
-        ];
+            );
+        }
 
         if ($spoilers->isEnabled()) {
             $data['winner_side'] = $this->winner_side;
