@@ -10,5 +10,7 @@ class ImportRequest
         public readonly int $toYear,
         public readonly ?string $identifier = null,
         public readonly ?string $promotionSlug = null,
+        public readonly ?int $chunkIndex = null,
+        public readonly ?int $chunkTotal = null,
     ) {}
 }

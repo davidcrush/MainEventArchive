@@ -4,10 +4,65 @@ namespace Tests\Unit;
 
 use App\Services\Wikipedia\WikipediaClient;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class WikipediaClientTest extends TestCase
 {
+    public function test_resolve_page_retries_after_rate_limit_and_honors_retry_after(): void
+    {
+        Sleep::fake();
+
+        Http::fakeSequence('en.wikipedia.org/*')
+            ->push('Slow down', 429, ['Retry-After' => '2'])
+            ->push([
+                'query' => [
+                    'pages' => [
+                        '12345' => [
+                            'pageid' => 12345,
+                            'title' => 'Starrcade (1996)',
+                            'revisions' => [
+                                ['slots' => ['main' => ['*' => '==Results==']]],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200);
+
+        $resolved = app(WikipediaClient::class)->resolvePage('Starrcade (1996)');
+
+        $this->assertSame('Starrcade (1996)', $resolved->canonicalTitle);
+        Sleep::assertSlept(fn ($duration) => $duration->totalMilliseconds === 2000.0, 1);
+    }
+
+    public function test_resolve_page_gives_up_after_max_retries(): void
+    {
+        config(['wikipedia.max_retries' => 2]);
+        Sleep::fake();
+
+        Http::fake([
+            'en.wikipedia.org/*' => Http::response('Slow down', 429),
+        ]);
+
+        $this->expectExceptionMessageMatches('/Wikipedia API request failed.*429/');
+
+        app(WikipediaClient::class)->resolvePage('Starrcade (1996)');
+    }
+
+    public function test_search_returns_empty_when_rate_limit_persists(): void
+    {
+        config(['wikipedia.max_retries' => 2]);
+        Sleep::fake();
+
+        Http::fake([
+            'en.wikipedia.org/*' => Http::response('Slow down', 429),
+        ]);
+
+        $this->assertSame([], app(WikipediaClient::class)->searchPageTitles('Starrcade 1996'));
+
+        Sleep::assertSlept(fn () => true, 1);
+    }
+
     public function test_fetch_wikitext_requests_redirect_resolution(): void
     {
         Http::fake([

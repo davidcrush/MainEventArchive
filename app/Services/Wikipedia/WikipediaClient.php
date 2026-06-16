@@ -4,7 +4,9 @@ namespace App\Services\Wikipedia;
 
 use App\Data\ResolvedWikipediaPage;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use RuntimeException;
 
 class WikipediaClient
@@ -16,7 +18,7 @@ class WikipediaClient
 
     public function resolvePage(string $pageTitle): ResolvedWikipediaPage
     {
-        $response = $this->client()->get(config('wikipedia.api_endpoint'), [
+        $response = $this->requestJson([
             'action' => 'query',
             'format' => 'json',
             'titles' => $pageTitle,
@@ -67,7 +69,7 @@ class WikipediaClient
      */
     public function searchPageTitles(string $query): array
     {
-        $response = $this->client()->get(config('wikipedia.api_endpoint'), [
+        $response = $this->requestJson([
             'action' => 'query',
             'format' => 'json',
             'list' => 'search',
@@ -89,6 +91,58 @@ class WikipediaClient
             static fn (array $result): ?string => $result['title'] ?? null,
             $results,
         )));
+    }
+
+    /**
+     * Issue a GET against the Wikipedia API, retrying with backoff when the
+     * server reports rate limiting (429) or replication lag (503). Honors the
+     * Retry-After header when present so concurrent workers self-throttle.
+     *
+     * @param  array<string, scalar>  $query
+     */
+    private function requestJson(array $query): Response
+    {
+        $endpoint = (string) config('wikipedia.api_endpoint');
+        $maxAttempts = max(1, (int) config('wikipedia.max_retries', 3));
+        $baseDelayMs = max(0, (int) config('wikipedia.retry_base_delay_ms', 1000));
+        $maxlag = (int) config('wikipedia.maxlag', 5);
+
+        if ($maxlag > 0) {
+            $query['maxlag'] = $maxlag;
+        }
+
+        $attempt = 0;
+
+        while (true) {
+            $attempt++;
+            $response = $this->client()->get($endpoint, $query);
+
+            if (! $this->isThrottled($response) || $attempt >= $maxAttempts) {
+                return $response;
+            }
+
+            Sleep::for($this->retryDelayMilliseconds($response, $attempt, $baseDelayMs))->milliseconds();
+        }
+    }
+
+    private function isThrottled(Response $response): bool
+    {
+        return in_array($response->status(), [429, 503], true);
+    }
+
+    private function retryDelayMilliseconds(Response $response, int $attempt, int $baseDelayMs): int
+    {
+        $retryAfter = trim((string) $response->header('Retry-After'));
+
+        if ($retryAfter !== '' && is_numeric($retryAfter)) {
+            return (int) round((float) $retryAfter * 1000);
+        }
+
+        if ($retryAfter !== '' && ($timestamp = strtotime($retryAfter)) !== false) {
+            return max(0, ($timestamp - time()) * 1000);
+        }
+
+        return $baseDelayMs * (2 ** ($attempt - 1));
     }
 
     private function client(): PendingRequest

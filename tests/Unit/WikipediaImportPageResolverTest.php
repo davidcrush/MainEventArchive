@@ -128,6 +128,148 @@ class WikipediaImportPageResolverTest extends TestCase
         }
     }
 
+    public function test_rejects_unrelated_year_matched_search_result_for_wrestlemania(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+        $show = Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'WrestleMania X-Seven 2001',
+            'slug' => 'wrestlemania-x-seven-2001',
+            'date' => '2001-04-01',
+        ]);
+
+        Http::fake(function ($request) {
+            parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
+
+            if (($query['list'] ?? null) === 'search') {
+                return Http::response([
+                    'query' => [
+                        'search' => [
+                            ['title' => 'WWF Backlash (2001)'],
+                            ['title' => 'WrestleMania X-Seven'],
+                        ],
+                    ],
+                ]);
+            }
+
+            $titles = urldecode($query['titles'] ?? '');
+
+            if (str_contains($titles, 'WrestleMania X-Seven')) {
+                return Http::response([
+                    'query' => [
+                        'pages' => [
+                            '2001' => [
+                                'pageid' => 2001,
+                                'title' => 'WrestleMania X-Seven',
+                                'revisions' => [
+                                    ['slots' => ['main' => ['*' => $this->wrestleManiaWikitext()]]],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'query' => [
+                    'pages' => [
+                        '404' => [
+                            'title' => $titles,
+                            'missing' => true,
+                        ],
+                    ],
+                ],
+            ]);
+        });
+
+        [$page] = app(WikipediaImportPageResolver::class)->resolve($show);
+
+        $this->assertSame('WrestleMania X-Seven', $page->canonicalTitle);
+    }
+
+    public function test_rejects_wrong_in_your_house_number_from_search(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+        $show = Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'In Your House 22: Over The Edge 1998',
+            'slug' => 'in-your-house-22-over-the-edge-1998',
+            'date' => '1998-05-31',
+        ]);
+
+        Http::fake(function ($request) {
+            parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
+
+            if (($query['list'] ?? null) === 'search') {
+                return Http::response([
+                    'query' => [
+                        'search' => [
+                            ['title' => 'In Your House 4'],
+                            ['title' => 'Over the Edge: In Your House'],
+                        ],
+                    ],
+                ]);
+            }
+
+            $titles = urldecode($query['titles'] ?? '');
+
+            if (str_contains($titles, 'Over the Edge: In Your House')) {
+                return Http::response([
+                    'query' => [
+                        'pages' => [
+                            '1998' => [
+                                'pageid' => 1998,
+                                'title' => 'Over the Edge: In Your House',
+                                'revisions' => [
+                                    ['slots' => ['main' => ['*' => $this->inYourHouseWikitext()]]],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'query' => [
+                    'pages' => [
+                        '404' => [
+                            'title' => $titles,
+                            'missing' => true,
+                        ],
+                    ],
+                ],
+            ]);
+        });
+
+        [$page] = app(WikipediaImportPageResolver::class)->resolve($show);
+
+        $this->assertSame('Over the Edge: In Your House', $page->canonicalTitle);
+    }
+
+    private function inYourHouseWikitext(): string
+    {
+        return <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match1 = [[Stone Cold Steve Austin]] defeated [[Dude Love]]
+| stip1 = Singles match
+| time1 = 16:49
+}}
+WIKI;
+    }
+
+    private function wrestleManiaWikitext(): string
+    {
+        return <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match1 = [[Stone Cold Steve Austin]] defeated [[The Rock]]
+| stip1 = Singles match
+| time1 = 16:49
+}}
+WIKI;
+    }
+
     private function kotr1996Wikitext(): string
     {
         return <<<'WIKI'

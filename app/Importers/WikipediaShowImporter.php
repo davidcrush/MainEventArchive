@@ -16,6 +16,7 @@ use App\Services\Wikipedia\WikipediaImportPageResolver;
 use App\Services\Wikipedia\WikipediaInfoboxParser;
 use App\Services\Wikipedia\WikipediaPageTitleResolver;
 use App\Services\Wikipedia\WikipediaResultsParser;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -210,7 +211,7 @@ class WikipediaShowImporter implements ShowDataImporter
             return collect();
         }
 
-        return Show::query()
+        $shows = Show::query()
             ->when($request->promotionSlug !== null, fn ($query) => $query->whereHas(
                 'promotion',
                 fn ($promotionQuery) => $promotionQuery->where('slug', $request->promotionSlug),
@@ -221,5 +222,28 @@ class WikipediaShowImporter implements ShowDataImporter
             ])
             ->orderBy('date')
             ->get();
+
+        return $this->applyChunk($shows, $request);
+    }
+
+    /**
+     * Reduce the ordered show list to a single round-robin worker slice.
+     *
+     * @param  Collection<int, Show>  $shows
+     * @return Collection<int, Show>
+     */
+    private function applyChunk($shows, ImportRequest $request)
+    {
+        if ($request->chunkTotal === null || $request->chunkTotal <= 1) {
+            return $shows;
+        }
+
+        $total = $request->chunkTotal;
+        $index = $request->chunkIndex ?? 0;
+
+        return $shows
+            ->values()
+            ->filter(static fn ($show, int $position): bool => $position % $total === $index)
+            ->values();
     }
 }

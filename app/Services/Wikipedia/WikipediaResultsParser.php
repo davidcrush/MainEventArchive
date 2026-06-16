@@ -139,6 +139,14 @@ class WikipediaResultsParser
             $entrantNames = $this->extractBattleRoyalEntrantNames($matchLine);
         }
 
+        if (preg_match('/\s+won\s+by\s+last\s+defeating\s+/i', $matchLine) === 1) {
+            $entrantNames = $this->extractBattleRoyalEntrantNames($matchLine);
+        }
+
+        if (preg_match('/\s+won\s+when\s+.+\s+eliminated\s+each\s+other/i', $matchLine) === 1) {
+            $entrantNames = $this->extractBattleRoyalEntrantNames($matchLine);
+        }
+
         $matchLine = $this->removeReferenceTags($matchLine);
 
         if (preg_match('/\s+defeated\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
@@ -147,6 +155,14 @@ class WikipediaResultsParser
 
         if (preg_match('/\s+won\s+by\s+(?:"last eliminating"|last eliminating)\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
             return $this->parseLastEliminationMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv, $entrantNames);
+        }
+
+        if (preg_match('/\s+won\s+by\s+last\s+defeating\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
+            return $this->parseLastEliminationMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv, $entrantNames);
+        }
+
+        if (preg_match('/\s+won\s+when\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
+            return $this->parseWonWhenEliminatedEachOtherMatchLine($matchLine, $stipulation, $time, $cardOrder, $splitMatch, $isPpv, $entrantNames);
         }
 
         if (preg_match('/\s+ended\s+in\s+a\s+/i', $matchLine, $splitMatch, PREG_OFFSET_CAPTURE) === 1) {
@@ -223,6 +239,43 @@ class WikipediaResultsParser
         $participants = array_merge(
             $this->parseTeamsFromSide($winnerRaw, 1, combineSegments: true),
             $this->parseTeamsFromSide($runnerUpRaw, 2, combineSegments: true),
+        );
+
+        if ($participants === []) {
+            throw new RuntimeException("Could not parse winner for battle royal match {$cardOrder}.");
+        }
+
+        return $this->buildParsedMatch(
+            cardOrder: $cardOrder,
+            stipulation: $stipulation,
+            time: $time,
+            participants: $participants,
+            finish: 'last_elimination',
+            isPpv: $isPpv,
+            entrantNames: $entrantNames,
+        );
+    }
+
+    /**
+     * @param  array<int, array{0: non-empty-string, 1: int}>  $splitMatch
+     * @param  list<string>  $entrantNames
+     */
+    private function parseWonWhenEliminatedEachOtherMatchLine(
+        string $matchLine,
+        string $stipulation,
+        string $time,
+        int $cardOrder,
+        array $splitMatch,
+        bool $isPpv,
+        array $entrantNames = [],
+    ): ParsedWikipediaMatch {
+        $winnersRaw = trim(substr($matchLine, 0, $splitMatch[0][1]));
+        $losersRaw = trim(substr($matchLine, $splitMatch[0][1] + strlen($splitMatch[0][0])));
+        $losersRaw = preg_replace('/\s+eliminated\s+each\s+other.*$/i', '', $losersRaw) ?? $losersRaw;
+
+        $participants = array_merge(
+            $this->parseTeamsFromSide($winnersRaw, 1, combineSegments: false),
+            $this->parseTeamsFromSide($losersRaw, 2, combineSegments: false),
         );
 
         if ($participants === []) {

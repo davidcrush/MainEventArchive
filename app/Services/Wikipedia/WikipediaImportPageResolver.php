@@ -5,6 +5,7 @@ namespace App\Services\Wikipedia;
 use App\Data\ResolvedWikipediaPage;
 use App\Exceptions\WikipediaImportResolutionException;
 use App\Models\Show;
+use App\Services\Wrestling\WrestleManiaEditionResolver;
 use RuntimeException;
 
 class WikipediaImportPageResolver
@@ -13,6 +14,7 @@ class WikipediaImportPageResolver
         private readonly WikipediaClient $client,
         private readonly WikipediaPageTitleResolver $pageTitleResolver,
         private readonly WikipediaResultsParser $resultsParser,
+        private readonly WrestleManiaEditionResolver $wrestleManiaEditionResolver,
     ) {}
 
     /**
@@ -24,7 +26,7 @@ class WikipediaImportPageResolver
         $attempts = [];
 
         foreach ($this->buildCandidates($show) as $candidate) {
-            if (! $this->shouldTryPageTitle($candidate['title'], $expectedYear, $candidate['from_search'])) {
+            if (! $this->shouldTryPageTitle($show, $candidate['title'], $expectedYear, $candidate['from_search'])) {
                 $attempts[] = [
                     'title' => $candidate['title'],
                     'reason' => $expectedYear === null
@@ -38,7 +40,7 @@ class WikipediaImportPageResolver
             try {
                 $page = $this->client->resolvePage($candidate['title']);
 
-                if ($expectedYear !== null && ! $this->shouldTryPageTitle($page->canonicalTitle, $expectedYear, $candidate['from_search'])) {
+                if ($expectedYear !== null && ! $this->shouldTryPageTitle($show, $page->canonicalTitle, $expectedYear, $candidate['from_search'])) {
                     $attempts[] = [
                         'title' => $candidate['title'],
                         'reason' => "Resolved to [{$page->canonicalTitle}], which does not match show year {$expectedYear}.",
@@ -121,7 +123,7 @@ class WikipediaImportPageResolver
         return $show->date?->year;
     }
 
-    private function shouldTryPageTitle(string $pageTitle, ?int $expectedYear, bool $fromSearch): bool
+    private function shouldTryPageTitle(Show $show, string $pageTitle, ?int $expectedYear, bool $fromSearch): bool
     {
         if ($expectedYear === null) {
             return true;
@@ -130,10 +132,68 @@ class WikipediaImportPageResolver
         $pageYear = $this->pageTitleYear($pageTitle);
 
         if ($pageYear !== null) {
-            return $pageYear === $expectedYear;
+            if ($pageYear !== $expectedYear) {
+                return false;
+            }
+
+            return $this->pageTitleMatchesShowFamily($show->title, $pageTitle);
         }
 
-        return ! $fromSearch;
+        return ! $fromSearch || $this->pageTitleMatchesShowFamily($show->title, $pageTitle);
+    }
+
+    private function pageTitleMatchesShowFamily(string $catalogTitle, string $pageTitle): bool
+    {
+        if (preg_match('/^In Your House\b/i', $catalogTitle) === 1) {
+            return $this->inYourHousePageMatchesCatalog($catalogTitle, $pageTitle);
+        }
+
+        if (preg_match('/^WrestleMania\b/i', $catalogTitle) === 1) {
+            if (preg_match('/^WrestleMania\b/i', $pageTitle) !== 1) {
+                return false;
+            }
+
+            $catalogEdition = $this->wrestleManiaEditionResolver->extractCatalogEdition($catalogTitle);
+            $pageEdition = $this->wrestleManiaEditionResolver->extractCatalogEdition($pageTitle);
+
+            if ($catalogEdition === null) {
+                return true;
+            }
+
+            return $pageEdition !== null && $catalogEdition === $pageEdition;
+        }
+
+        return true;
+    }
+
+    private function inYourHousePageMatchesCatalog(string $catalogTitle, string $pageTitle): bool
+    {
+        if (preg_match('/^In Your House (\d+): (.+) (\d{4})$/', $catalogTitle, $catalogMatches) !== 1) {
+            return preg_match('/^In Your House\b/i', $pageTitle) === 1
+                || preg_match('/: In Your House\b/i', $pageTitle) === 1;
+        }
+
+        $catalogNumber = (int) $catalogMatches[1];
+        $catalogSubtitle = $this->normalizeInYourHouseSubtitle($catalogMatches[2]);
+
+        if (preg_match('/^In Your House (\d+)\b/i', $pageTitle, $pageMatches) === 1) {
+            return (int) $pageMatches[1] === $catalogNumber;
+        }
+
+        if (preg_match('/^(.+): In Your House\b/i', $pageTitle, $pageMatches) === 1) {
+            return $this->normalizeInYourHouseSubtitle($pageMatches[1]) === $catalogSubtitle;
+        }
+
+        return false;
+    }
+
+    private function normalizeInYourHouseSubtitle(string $subtitle): string
+    {
+        $subtitle = html_entity_decode(trim($subtitle), ENT_QUOTES | ENT_HTML5);
+        $subtitle = str_replace(["\u{2019}", "'"], "'", $subtitle);
+        $subtitle = preg_replace('/\s+/', ' ', $subtitle) ?? $subtitle;
+
+        return strtolower($subtitle);
     }
 
     private function pageTitleYear(string $pageTitle): ?int

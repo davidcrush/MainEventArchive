@@ -78,6 +78,47 @@ WIKI;
         $this->assertSame('WCW World Heavyweight Championship', $battleRoyal->titleName);
     }
 
+    public function test_parses_battle_royal_last_defeating_format(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match2 = [[The Rock]] won by last defeating [[Big Show]]
+| stip2 = [[Battle royal]]
+| time2 = 12:34
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(1, $matches);
+        $this->assertSame('The Rock', $matches[0]->participants[0]['name']);
+        $this->assertSame('Big Show', $matches[0]->participants[1]['name']);
+        $this->assertSame('last_elimination', $matches[0]->finish);
+    }
+
+    public function test_parses_battle_royal_won_when_eliminated_each_other_format(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+| match2 = [[D'Lo Brown]] and [[Test (wrestler)|Test]] won when [[Droz (wrestler)|Droz]] and [[Charles Wright (wrestler)|The Godfather]] eliminated each other<ref group="Note">The other participants were: [[Faarooq]] and [[Bradshaw]].</ref>
+| stip2 = [[Battle royal (professional wrestling)|Battle Royal]]
+| time2 = 12:34
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(1, $matches);
+        $this->assertSame("D'Lo Brown", $matches[0]->participants[0]['name']);
+        $this->assertSame('Test', $matches[0]->participants[1]['name']);
+        $this->assertSame('Droz', $matches[0]->participants[2]['name']);
+        $this->assertSame('The Godfather', $matches[0]->participants[3]['name']);
+        $this->assertSame('last_elimination', $matches[0]->finish);
+        $this->assertSame(['Faarooq', 'Bradshaw'], $matches[0]->entrantNames);
+    }
+
     public function test_parses_battle_royal_last_elimination_with_quoted_phrase(): void
     {
         $wikitext = <<<'WIKI'

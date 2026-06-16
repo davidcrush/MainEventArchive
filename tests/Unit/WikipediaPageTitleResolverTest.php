@@ -75,4 +75,26 @@ class WikipediaPageTitleResolverTest extends TestCase
 
         $this->assertSame('Clash of the Champions XVI: Fall Brawl', $candidates[0]);
     }
+
+    public function test_candidates_use_in_your_house_wikipedia_titles_without_year(): void
+    {
+        $show = new Show(['title' => 'In Your House 13: Final Four 1997']);
+
+        $candidates = $this->resolver->candidates($show);
+
+        $this->assertContains('In Your House 13', $candidates);
+        $this->assertContains('In Your House 13: Final Four', $candidates);
+        $this->assertContains('Final Four: In Your House', $candidates);
+        $this->assertNotContains('In Your House 13: Final Four (1997)', $candidates);
+    }
+
+    public function test_candidates_use_wrestlemania_edition_without_calendar_year(): void
+    {
+        $show = new Show(['title' => 'WrestleMania X-Seven 2001']);
+
+        $candidates = $this->resolver->candidates($show);
+
+        $this->assertContains('WrestleMania X-Seven', $candidates);
+        $this->assertNotContains('WrestleMania X-Seven (2001)', $candidates);
+    }
 }

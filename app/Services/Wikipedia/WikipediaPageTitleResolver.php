@@ -20,6 +20,14 @@ class WikipediaPageTitleResolver
             $candidates[] = $override;
         }
 
+        if ($this->appendInYourHouseCandidates($candidates, $show->title)) {
+            return array_values(array_unique($candidates));
+        }
+
+        if ($this->appendWrestleManiaCandidates($candidates, $show->title)) {
+            return array_values(array_unique($candidates));
+        }
+
         if (preg_match('/^(.+?)\s+(\d{4})$/', $show->title, $matches) === 1) {
             $name = trim($matches[1]);
             $year = $matches[2];
@@ -37,10 +45,6 @@ class WikipediaPageTitleResolver
                 }
             }
 
-            if (preg_match('/^In Your House (\d+): (.+)$/', $name, $inYourHouseMatches) === 1) {
-                $candidates[] = "In Your House {$inYourHouseMatches[1]}: {$inYourHouseMatches[2]} ({$year})";
-            }
-
             if (strcasecmp($name, 'Fall Brawl') === 0) {
                 $candidates[] = "Fall Brawl '{$shortYear}: War Games";
             }
@@ -54,6 +58,71 @@ class WikipediaPageTitleResolver
     }
 
     /**
+     * @param  list<string>  $candidates
+     */
+    private function appendInYourHouseCandidates(array &$candidates, string $catalogTitle): bool
+    {
+        if (preg_match('/^In Your House (\d+): (.+) (\d{4})$/', $catalogTitle, $matches) !== 1) {
+            return false;
+        }
+
+        $number = $matches[1];
+        $subtitle = $matches[2];
+        $wikipediaSubtitle = $this->wikipediaSubtitleCase($subtitle);
+
+        $candidates[] = "In Your House {$number}";
+        $candidates[] = "In Your House {$number}: {$wikipediaSubtitle}";
+        $candidates[] = "{$wikipediaSubtitle}: In Your House";
+
+        return true;
+    }
+
+    /**
+     * @param  list<string>  $candidates
+     */
+    private function appendWrestleManiaCandidates(array &$candidates, string $catalogTitle): bool
+    {
+        if (preg_match('/^WrestleMania 2000$/i', $catalogTitle) === 1) {
+            $candidates[] = 'WrestleMania 2000';
+
+            return true;
+        }
+
+        if (preg_match('/^WrestleMania (.+) (\d{4})$/i', $catalogTitle, $matches) !== 1) {
+            return false;
+        }
+
+        $edition = trim($matches[1]);
+
+        foreach ($this->articleNormalizedTitles("WrestleMania {$edition}") as $normalizedTitle) {
+            $candidates[] = $normalizedTitle;
+        }
+
+        return true;
+    }
+
+    private function wikipediaSubtitleCase(string $subtitle): string
+    {
+        $words = preg_split('/\s+/', trim($subtitle)) ?: [];
+        $minorWords = ['of', 'the', 'in', 'at', 'and', 'vs', 'for', 'from', 'to', 'a', 'an'];
+        $cased = [];
+
+        foreach ($words as $index => $word) {
+            $lower = strtolower($word);
+
+            if ($index > 0 && in_array($lower, $minorWords, true)) {
+                $cased[] = $lower;
+
+                continue;
+            }
+
+            $cased[] = Str::title($lower);
+        }
+
+        return implode(' ', $cased);
+    }
+
+    /**
      * @return list<string>
      */
     private function articleNormalizedTitles(string $title): array
@@ -61,7 +130,7 @@ class WikipediaPageTitleResolver
         $titles = [$title];
 
         $normalized = preg_replace_callback(
-            '/\b(Of|The|At|And|Vs|In|On|For|From|To)\b/',
+            '/\b(Of|The|At|And|Vs)\b/',
             static fn (array $matches): string => strtolower($matches[1]),
             $title,
         );
