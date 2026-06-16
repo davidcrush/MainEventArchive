@@ -96,7 +96,10 @@ class CagematchCatalogTitleNormalizer
         }
 
         if (preg_match('/^In Your House (\d+): (.+)$/i', $title, $matches) === 1) {
-            return "In Your House {$matches[1]}: {$matches[2]} {$year}";
+            $subtitle = trim($matches[2]);
+            $subtitle = preg_replace('/\s+\d{4}$/', '', $subtitle) ?? $subtitle;
+
+            return "In Your House {$matches[1]}: {$subtitle} {$year}";
         }
 
         if (preg_match('/^(Halloween Havoc|Fall Brawl|Spring Stampede|Slamboree|Uncensored|Mayhem|World War 3|Beach Blast) (\d{4})$/i', $title, $matches) === 1) {

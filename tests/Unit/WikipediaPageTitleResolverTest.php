@@ -88,6 +88,16 @@ class WikipediaPageTitleResolverTest extends TestCase
         $this->assertNotContains('In Your House 13: Final Four (1997)', $candidates);
     }
 
+    public function test_candidates_strip_duplicate_year_from_in_your_house_catalog_title(): void
+    {
+        $show = new Show(['title' => 'In Your House 21: Unforgiven 1998 1998']);
+
+        $candidates = $this->resolver->candidates($show);
+
+        $this->assertContains('Unforgiven: In Your House', $candidates);
+        $this->assertNotContains('Unforgiven 1998: In Your House', $candidates);
+    }
+
     public function test_candidates_use_wrestlemania_edition_without_calendar_year(): void
     {
         $show = new Show(['title' => 'WrestleMania X-Seven 2001']);

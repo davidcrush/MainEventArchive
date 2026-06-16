@@ -246,6 +246,58 @@ class WikipediaImportPageResolverTest extends TestCase
         $this->assertSame('Over the Edge: In Your House', $page->canonicalTitle);
     }
 
+    public function test_resolves_in_your_house_when_catalog_title_has_duplicate_year_suffix(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+        $show = Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'In Your House 21: Unforgiven 1998 1998',
+            'slug' => 'in-your-house-21-unforgiven-1998-1998',
+            'date' => '1998-04-26',
+        ]);
+
+        Http::fake(function ($request) {
+            parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
+
+            if (($query['list'] ?? null) === 'search') {
+                return Http::response(['query' => ['search' => []]]);
+            }
+
+            $titles = urldecode($query['titles'] ?? '');
+
+            if (str_contains($titles, 'Unforgiven: In Your House')) {
+                return Http::response([
+                    'query' => [
+                        'pages' => [
+                            '1998' => [
+                                'pageid' => 1998,
+                                'title' => 'Unforgiven: In Your House',
+                                'revisions' => [
+                                    ['slots' => ['main' => ['*' => $this->inYourHouseWikitext()]]],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'query' => [
+                    'pages' => [
+                        '404' => [
+                            'title' => $titles,
+                            'missing' => true,
+                        ],
+                    ],
+                ],
+            ]);
+        });
+
+        [$page] = app(WikipediaImportPageResolver::class)->resolve($show);
+
+        $this->assertSame('Unforgiven: In Your House', $page->canonicalTitle);
+    }
+
     private function inYourHouseWikitext(): string
     {
         return <<<'WIKI'

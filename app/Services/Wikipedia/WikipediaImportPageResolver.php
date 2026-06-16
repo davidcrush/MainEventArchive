@@ -168,13 +168,15 @@ class WikipediaImportPageResolver
 
     private function inYourHousePageMatchesCatalog(string $catalogTitle, string $pageTitle): bool
     {
-        if (preg_match('/^In Your House (\d+): (.+) (\d{4})$/', $catalogTitle, $catalogMatches) !== 1) {
+        if (preg_match('/^In Your House (\d+): (.+) (\d{4})(?:\s+\d{4})?$/', $catalogTitle, $catalogMatches) !== 1) {
             return preg_match('/^In Your House\b/i', $pageTitle) === 1
                 || preg_match('/: In Your House\b/i', $pageTitle) === 1;
         }
 
         $catalogNumber = (int) $catalogMatches[1];
-        $catalogSubtitle = $this->normalizeInYourHouseSubtitle($catalogMatches[2]);
+        $catalogSubtitle = $this->normalizeInYourHouseSubtitle(
+            preg_replace('/\s+\d{4}$/', '', $catalogMatches[2]) ?? $catalogMatches[2],
+        );
 
         if (preg_match('/^In Your House (\d+)\b/i', $pageTitle, $pageMatches) === 1) {
             return (int) $pageMatches[1] === $catalogNumber;

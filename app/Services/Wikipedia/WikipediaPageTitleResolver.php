@@ -62,12 +62,13 @@ class WikipediaPageTitleResolver
      */
     private function appendInYourHouseCandidates(array &$candidates, string $catalogTitle): bool
     {
-        if (preg_match('/^In Your House (\d+): (.+) (\d{4})$/', $catalogTitle, $matches) !== 1) {
+        $parsed = $this->parseInYourHouseCatalogTitle($catalogTitle);
+
+        if ($parsed === null) {
             return false;
         }
 
-        $number = $matches[1];
-        $subtitle = $matches[2];
+        ['number' => $number, 'subtitle' => $subtitle] = $parsed;
         $wikipediaSubtitle = $this->wikipediaSubtitleCase($subtitle);
 
         $candidates[] = "In Your House {$number}";
@@ -75,6 +76,24 @@ class WikipediaPageTitleResolver
         $candidates[] = "{$wikipediaSubtitle}: In Your House";
 
         return true;
+    }
+
+    /**
+     * @return array{number: string, subtitle: string}|null
+     */
+    private function parseInYourHouseCatalogTitle(string $catalogTitle): ?array
+    {
+        if (preg_match('/^In Your House (\d+): (.+) (\d{4})(?:\s+\d{4})?$/', $catalogTitle, $matches) !== 1) {
+            return null;
+        }
+
+        $subtitle = trim($matches[2]);
+        $subtitle = preg_replace('/\s+\d{4}$/', '', $subtitle) ?? $subtitle;
+
+        return [
+            'number' => $matches[1],
+            'subtitle' => $subtitle,
+        ];
     }
 
     /**

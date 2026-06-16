@@ -47,6 +47,16 @@ class CagematchCatalogTitleNormalizerTest extends TestCase
         $this->assertSame('In Your House 12: It\'s Time 1996', $title);
     }
 
+    public function test_normalizes_in_your_house_title_when_cagematch_subtitle_already_includes_year(): void
+    {
+        $title = $this->normalizer->normalize(
+            'WWF In Your House 21: Unforgiven 1998',
+            Carbon::parse('1998-04-26'),
+        );
+
+        $this->assertSame('In Your House 21: Unforgiven 1998', $title);
+    }
+
     public function test_strips_subtitle_suffix_after_dash(): void
     {
         $title = $this->normalizer->normalize(
