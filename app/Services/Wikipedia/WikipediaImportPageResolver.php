@@ -18,7 +18,7 @@ class WikipediaImportPageResolver
     ) {}
 
     /**
-     * @return array{0: ResolvedWikipediaPage, 1: list<array{title: string, reason: string}>}
+     * @return array{0: ResolvedWikipediaPage, 1: list<array{title: string, reason: string}>, 2: int}
      */
     public function resolve(Show $show): array
     {
@@ -49,9 +49,9 @@ class WikipediaImportPageResolver
                     continue;
                 }
 
-                $this->resultsParser->parse($page->wikitext, $page->canonicalTitle, $show->title);
+                $parsedMatches = $this->resultsParser->parse($page->wikitext, $page->canonicalTitle, $show->title);
 
-                return [$page, $attempts];
+                return [$page, $attempts, count($parsedMatches)];
             } catch (RuntimeException $exception) {
                 $attempts[] = [
                     'title' => $candidate['title'],

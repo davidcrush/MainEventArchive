@@ -3,6 +3,7 @@
 namespace App\Services\Wikipedia;
 
 use App\Data\ParsedWikipediaMatch;
+use App\Exceptions\WikipediaMatchCountMismatchException;
 use RuntimeException;
 
 class WikipediaResultsParser
@@ -15,6 +16,55 @@ class WikipediaResultsParser
      * @return list<ParsedWikipediaMatch>
      */
     public function parse(string $wikitext, string ...$eventScopeHeadings): array
+    {
+        $content = $this->resolveResultsContent($wikitext, ...$eventScopeHeadings);
+        $resultsSection = $this->extractResultsSection($content);
+
+        if ($resultsSection === null) {
+            if ($eventScopeHeadings !== [] && preg_match('/\{\{Pro [Ww]restling results table/i', $content) === 1) {
+                $resultsSection = $content;
+            } else {
+                throw new RuntimeException('No Results section found on Wikipedia page.');
+            }
+        }
+
+        if (preg_match('/\{\{Pro [Ww]restling results table/i', $resultsSection) === 1) {
+            $matches = $this->parseProWrestlingResultsTemplate($resultsSection);
+            $this->assertParsedMatchCount($resultsSection, $matches, isTemplate: true);
+
+            return $matches;
+        }
+
+        $matches = $this->parseWikitable($resultsSection);
+        $this->assertParsedMatchCount($resultsSection, $matches, isTemplate: false);
+
+        return $matches;
+    }
+
+    /**
+     * Count non-empty match slots declared on a Wikipedia results table.
+     */
+    public function countDeclaredMatches(string $wikitext, string ...$eventScopeHeadings): int
+    {
+        $content = $this->resolveResultsContent($wikitext, ...$eventScopeHeadings);
+        $resultsSection = $this->extractResultsSection($content);
+
+        if ($resultsSection === null) {
+            if ($eventScopeHeadings !== [] && preg_match('/\{\{Pro [Ww]restling results table/i', $content) === 1) {
+                $resultsSection = $content;
+            } else {
+                throw new RuntimeException('No Results section found on Wikipedia page.');
+            }
+        }
+
+        if (preg_match('/\{\{Pro [Ww]restling results table/i', $resultsSection) === 1) {
+            return $this->countDeclaredTemplateMatches($resultsSection);
+        }
+
+        return $this->countDeclaredWikitableMatches($resultsSection);
+    }
+
+    private function resolveResultsContent(string $wikitext, string ...$eventScopeHeadings): string
     {
         $content = $wikitext;
         $scopeHeadings = array_values(array_unique(array_filter(
@@ -30,21 +80,74 @@ class WikipediaResultsParser
             }
         }
 
-        $resultsSection = $this->extractResultsSection($content);
+        return $content;
+    }
 
-        if ($resultsSection === null) {
-            if ($scopeHeadings !== [] && preg_match('/\{\{Pro [Ww]restling results table/i', $content) === 1) {
-                $resultsSection = $content;
-            } else {
-                throw new RuntimeException('No Results section found on Wikipedia page.');
+    /**
+     * @param  list<ParsedWikipediaMatch>  $matches
+     */
+    private function assertParsedMatchCount(string $resultsSection, array $matches, bool $isTemplate): void
+    {
+        $declaredCount = $isTemplate
+            ? $this->countDeclaredTemplateMatches($resultsSection)
+            : $this->countDeclaredWikitableMatches($resultsSection);
+
+        $parsedCount = count($matches);
+
+        if ($declaredCount !== $parsedCount) {
+            throw new WikipediaMatchCountMismatchException($declaredCount, $parsedCount);
+        }
+    }
+
+    private function countDeclaredTemplateMatches(string $section): int
+    {
+        if (preg_match('/\{\{Pro [Ww]restling results table(.*?)\n\s*\}\}/is', $section, $templateMatch) !== 1) {
+            throw new RuntimeException('Results section does not contain a Pro Wrestling results table.');
+        }
+
+        $parameters = $this->parseTemplateParameters($templateMatch[1]);
+        $count = 0;
+
+        foreach ($parameters as $key => $value) {
+            if (preg_match('/^match(\d+)$/', $key) === 1 && trim($value) !== '') {
+                $count++;
             }
         }
 
-        if (preg_match('/\{\{Pro [Ww]restling results table/i', $resultsSection) === 1) {
-            return $this->parseProWrestlingResultsTemplate($resultsSection);
+        return $count;
+    }
+
+    private function countDeclaredWikitableMatches(string $section): int
+    {
+        if (preg_match('/\{\|.*?\|\}/is', $section, $tableMatch) !== 1) {
+            throw new RuntimeException('Results section does not contain a recognizable results table.');
         }
 
-        return $this->parseWikitable($resultsSection);
+        $rows = preg_split('/\n\|-/', $tableMatch[0]) ?: [];
+        $count = 0;
+
+        foreach ($rows as $row) {
+            if (! str_contains($row, '|') || str_contains(strtolower($row), '! number') || str_contains(strtolower($row), '! results')) {
+                continue;
+            }
+
+            $cells = array_values(array_filter(array_map('trim', preg_split('/\n\|/', $row) ?: [])));
+
+            if (count($cells) < 3) {
+                continue;
+            }
+
+            $rawNumber = rtrim($cells[0], '!');
+            $cardNumber = preg_replace('/[^0-9]/', '', $rawNumber);
+
+            if ($cardNumber === '') {
+                continue;
+            }
+
+            $count++;
+        }
+
+        return $count;
     }
 
     private function extractResultsSection(string $wikitext): ?string
@@ -426,27 +529,38 @@ class WikipediaResultsParser
 
         $segments = [];
         $current = '';
-        $depth = 0;
+        $parenDepth = 0;
+        $wikiLinkDepth = 0;
         $length = strlen($text);
 
         for ($index = 0; $index < $length; $index++) {
+            if ($wikiLinkDepth === 0 && substr($text, $index, 2) === '[[') {
+                $wikiLinkDepth++;
+                $current .= '[[';
+                $index++;
+
+                continue;
+            }
+
+            if ($wikiLinkDepth > 0 && substr($text, $index, 2) === ']]') {
+                $wikiLinkDepth--;
+                $current .= ']]';
+                $index++;
+
+                continue;
+            }
+
             $character = $text[$index];
 
-            if ($character === '(') {
-                $depth++;
-                $current .= $character;
-
-                continue;
+            if ($wikiLinkDepth === 0) {
+                if ($character === '(') {
+                    $parenDepth++;
+                } elseif ($character === ')') {
+                    $parenDepth--;
+                }
             }
 
-            if ($character === ')') {
-                $depth--;
-                $current .= $character;
-
-                continue;
-            }
-
-            if ($depth === 0) {
+            if ($parenDepth === 0 && $wikiLinkDepth === 0) {
                 $delimiterLength = $this->segmentDelimiterLength($text, $index);
 
                 if ($delimiterLength !== null) {

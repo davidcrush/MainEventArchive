@@ -94,7 +94,7 @@ class VerifyWikipediaImportCommand extends Command
 
         foreach ($shows as $show) {
             try {
-                [$page] = $importer->resolvePageForShow($show);
+                [$page, , $matchCount] = $importer->resolvePageForShow($show);
                 $successes++;
 
                 if ($emitJson) {
@@ -102,9 +102,10 @@ class VerifyWikipediaImportCommand extends Command
                         'slug' => $show->slug,
                         'status' => 'ok',
                         'title' => $page->canonicalTitle,
+                        'match_count' => $matchCount,
                     ]);
                 } else {
-                    $this->line("  OK  {$show->slug} → {$page->canonicalTitle}");
+                    $this->line("  OK  {$show->slug} → {$page->canonicalTitle} ({$matchCount} matches)");
                 }
             } catch (WikipediaImportResolutionException $exception) {
                 $failures[] = $this->recordFailure($show, $exception->getMessage(), $emitJson);
@@ -170,7 +171,9 @@ class VerifyWikipediaImportCommand extends Command
 
                 if ($status === 'ok') {
                     $successes++;
-                    $this->line("  OK  {$record['slug']} → {$record['title']}");
+                    $matchCount = (int) ($record['match_count'] ?? 0);
+                    $matchLabel = $matchCount > 0 ? " ({$matchCount} matches)" : '';
+                    $this->line("  OK  {$record['slug']} → {$record['title']}{$matchLabel}");
                 } elseif ($status === 'fail') {
                     $failures[] = [
                         'slug' => (string) ($record['slug'] ?? ''),

@@ -146,6 +146,8 @@ class MatchesRelationManager extends RelationManager
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultPaginationPageOption(20)
+            ->paginated([10, 20, 25, 50]);
     }
 }

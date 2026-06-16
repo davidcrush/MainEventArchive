@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\WikipediaMatchCountMismatchException;
 use App\Services\Wikipedia\WikipediaResultsParser;
 use Tests\TestCase;
 
@@ -495,5 +496,115 @@ WIKI;
         $this->assertSame('Pat Patterson', $matches[0]->participants[0]['name']);
         $this->assertSame('Gerald Brisco', $matches[0]->participants[1]['name']);
         $this->assertStringContainsString('Crash Holly pinned Patterson', $matches[0]->finish);
+    }
+
+    public function test_does_not_split_and_inside_wiki_link_team_names(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+|match5 = [[Edge and Christian]] defeated [[Too Cool]] ([[Grand Master Sexay]] and [[Scotty 2 Hotty]]) (c), [[The Hardy Boyz]] ([[Jeff Hardy]] and [[Matt Hardy]]), and [[T & A (professional wrestling)|T & A]] ([[Matt Bloom|Albert]] and [[Test (wrestler)|Test]])
+|stip5 = [[Elimination match|Fatal 4-Way elimination match]] for the [[WWF Tag Team Championship]]
+|time5 = 14:11
+}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertSame('Edge and Christian', $matches[0]->participants[0]['name']);
+        $this->assertSame('WWF Tag Team Championship', $matches[0]->titleName);
+    }
+
+    public function test_king_of_the_ring_2000_parses_full_card_including_six_man_main_event(): void
+    {
+        $wikitext = $this->kingOfTheRing2000Wikitext();
+
+        $matches = $this->parser->parse($wikitext, 'King of the Ring (2000)', 'King Of The Ring 2000');
+
+        $this->assertSame(11, $this->parser->countDeclaredMatches($wikitext, 'King of the Ring (2000)', 'King Of The Ring 2000'));
+        $this->assertCount(11, $matches);
+
+        $mainEvent = collect($matches)->firstWhere('cardOrder', 11);
+
+        $this->assertNotNull($mainEvent);
+        $this->assertSame('tag', $mainEvent->matchType);
+        $this->assertSame('WWF Championship', $mainEvent->titleName);
+        $this->assertSame(1, $mainEvent->winnerSide);
+        $this->assertStringContainsString('The Rock', $mainEvent->participants[0]['name']);
+        $this->assertStringContainsString('McMahon', $mainEvent->participants[1]['name']);
+    }
+
+    public function test_throws_when_wikitable_declares_more_matches_than_can_be_parsed(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{| class="wikitable"
+|-
+! No.
+! Results
+! Stipulations
+! Times
+|-
+|1
+|[[Winner]] defeated [[Loser]]
+|Singles match
+|10:00
+|-
+|2
+|[[A]] vs. [[B]] ended in a draw
+|Singles match
+|5:00
+|}
+WIKI;
+
+        $this->expectException(WikipediaMatchCountMismatchException::class);
+        $this->expectExceptionMessage('Wikipedia lists 2 matches but only 1 were parsed successfully.');
+
+        $this->parser->parse($wikitext);
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function kingOfTheRing2000Wikitext(): string
+    {
+        return <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+|match1 = [[Rikishi (wrestler)|Rikishi]] defeated [[Chris Benoit]] by disqualification
+|stip1 = [[King of the Ring tournament|King of the Ring]] quarter-final match
+|time1 = 3:25
+|match2 = [[Val Venis]] (with [[Trish Stratus]]) defeated [[Eddie Guerrero]] (with [[Chyna]])
+|stip2 = [[King of the Ring tournament|King of the Ring]] quarter-final match
+|time2 = 8:04
+|match3 = [[Crash Holly]] defeated [[Bull Buchanan]]
+|stip3 = [[King of the Ring tournament|King of the Ring]] quarter-final match
+|time3 = 4:07
+|match4 = [[Kurt Angle]] defeated [[Chris Jericho]]
+|stip4 = [[King of the Ring tournament|King of the Ring]] quarter-final match
+|time4 = 9:50
+|match5 = [[Edge and Christian]] defeated [[Too Cool]] ([[Grand Master Sexay]] and [[Scotty 2 Hotty]]) (c), [[The Hardy Boyz]] ([[Jeff Hardy]] and [[Matt Hardy]]), and [[T & A (professional wrestling)|T & A]] ([[Matt Bloom|Albert]] and [[Test (wrestler)|Test]])
+|stip5 = [[Elimination match|Fatal 4-Way elimination match]] for the [[WWF Tag Team Championship]]
+|time5 = 14:11
+|match6 = [[Rikishi (wrestler)|Rikishi]] defeated [[Val Venis]] (with [[Trish Stratus]])
+|stip6 = [[King of the Ring tournament|King of the Ring]] semi-final match
+|time6 = 3:15
+|match7 = [[Kurt Angle]] defeated [[Crash Holly]]
+|stip7 = [[King of the Ring tournament|King of the Ring]] semi-final match
+|time7 = 3:58
+|match8 = [[Pat Patterson (wrestler)|Pat Patterson]] (c) vs. [[Gerald Brisco]] ended when [[Crash Holly]] pinned Patterson
+|stip8 = [[Hardcore match|Hardcore]] [[Evening gown match]] for the [[WWF Hardcore Championship]]
+|time8 = 3:07
+|match9 = [[D-Generation X]] ([[Tori (wrestler)|Tori]], [[Road Dogg]] and [[X-Pac]]) defeated [[The Dudley Boyz]] ([[Bubba Ray Dudley]] and [[D-Von Dudley]])
+|stip9 = [[Handicap match|Handicap]] [[Professional wrestling match types#Tables match|Tables]] [[Professional wrestling match types#Dumpster match|Dumpster match]]
+|time9 = 9:45
+|match10 = [[Kurt Angle]] defeated [[Rikishi (wrestler)|Rikishi]]
+|stip10 = [[King of the Ring tournament|King of the Ring]] final match
+|time10 = 5:56
+|match11 = [[Dwayne Johnson|The Rock]] and [[The Brothers of Destruction]] ([[Kane (wrestler)|Kane]] and [[The Undertaker]]) defeated The McMahon-Helmsley Faction ([[Mr. McMahon]], [[Shane McMahon]] and [[Triple H]] (c)) (with [[Stephanie McMahon-Helmsley]])
+|stip11 = [[Six-man tag team match]] for the [[WWF Championship]]
+|time11 = 17:54
+}}
+WIKI;
     }
 }

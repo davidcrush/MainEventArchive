@@ -45,10 +45,14 @@ class WikipediaShowImporter implements ShowDataImporter
 
         foreach ($shows as $show) {
             try {
-                [$page, $attempts] = $this->pageResolver->resolve($show);
+                [$page, $attempts, $declaredMatchCount] = $this->pageResolver->resolve($show);
                 $parsedMatches = $this->resultsParser->parse($page->wikitext, $page->canonicalTitle, $show->title);
                 $metadata = $this->infoboxParser->parse($page->wikitext, $page->canonicalTitle, $show->title);
-                $matchCount = $this->persistMatches($show, $parsedMatches, $page->canonicalTitle);
+                $importedMatchCount = $this->persistMatches($show, $parsedMatches, $page->canonicalTitle);
+
+                if ($importedMatchCount !== $declaredMatchCount) {
+                    throw new RuntimeException("Imported {$importedMatchCount} matches but Wikipedia declares {$declaredMatchCount} for [{$show->title}].");
+                }
 
                 $updates = [
                     'source' => $show->source === 'manual' ? 'wikipedia' : $show->source,
@@ -87,7 +91,7 @@ class WikipediaShowImporter implements ShowDataImporter
                 $show->update($updates);
 
                 $updated++;
-                $created += $matchCount;
+                $created += $importedMatchCount;
             } catch (WikipediaImportResolutionException $exception) {
                 $warnings[] = $exception->getMessage();
                 $skipped++;
@@ -108,7 +112,7 @@ class WikipediaShowImporter implements ShowDataImporter
     }
 
     /**
-     * @return array{0: ResolvedWikipediaPage, 1: list<array{title: string, reason: string}>}
+     * @return array{0: ResolvedWikipediaPage, 1: list<array{title: string, reason: string}>, 2: int}
      */
     public function resolvePageForShow(Show $show): array
     {
