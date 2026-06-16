@@ -48,6 +48,9 @@ React + Inertia + Chakra UI standards for Main Event Archive.
 | `RatingStars` | MEA ratings only |
 | `CagematchBadge` | Link-out, no score |
 | `VideoPlaceholder` | “Where to watch” section; branded YouTube/Netflix link-out buttons |
+| `PromotionLogo` | Shared promotion mark (Wikimedia assets); used on show cards, promotion index, match rows; falls back to `ShowThumbnail` |
+| `ShowThumbnail` | Gold abbreviation fallback when no logo asset exists for a promotion slug |
+| `PromotionCard` | Promotion index card; logo, status, years, HQ, description; links to Browse |
 | `YouTubeWatchButton` | Official white full logo on black (`youtube-logo-full-white.png`) |
 | `NetflixWatchButton` | Official wordmark on black (`Netflix_Logo_RGB.png`) |
 

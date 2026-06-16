@@ -1,6 +1,6 @@
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import PromotionLogo from './PromotionLogo';
 import RatingStars from './RatingStars';
-import ShowThumbnail from './ShowThumbnail';
 
 export interface Participant {
     id: number;
@@ -79,10 +79,12 @@ export default function MatchRow({
     match,
     spoilersEnabled,
     promotionName,
+    promotionSlug,
 }: {
     match: MatchData;
     spoilersEnabled: boolean;
     promotionName?: string;
+    promotionSlug?: string;
 }) {
     const resultLine = spoilersEnabled ? formatResult(match) : null;
     const participantLine = match.participant_line ?? formatParticipants(match.participants ?? []);
@@ -99,7 +101,11 @@ export default function MatchRow({
             <Flex justify="space-between" align="start" gap={4} flexWrap="wrap">
                 <Flex gap={3} flex={1} minW={0}>
                     {spoilersEnabled ? (
-                        <ShowThumbnail promotionName={promotionName} size="sm" />
+                        <PromotionLogo
+                            promotionSlug={promotionSlug}
+                            promotionName={promotionName}
+                            size="sm"
+                        />
                     ) : null}
                     <Box flex={1} minW={0}>
                         {match.title_name ? (

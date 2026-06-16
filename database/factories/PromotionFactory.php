@@ -38,4 +38,28 @@ class PromotionFactory extends Factory
             'slug' => 'wwe',
         ]);
     }
+
+    public function aew(): static
+    {
+        return $this->state(fn (): array => [
+            'name' => 'All Elite Wrestling',
+            'slug' => 'aew',
+        ]);
+    }
+
+    public function tna(): static
+    {
+        return $this->state(fn (): array => [
+            'name' => 'Total Nonstop Action',
+            'slug' => 'tna',
+        ]);
+    }
+
+    public function ecw(): static
+    {
+        return $this->state(fn (): array => [
+            'name' => 'Extreme Championship Wrestling',
+            'slug' => 'ecw',
+        ]);
+    }
 }

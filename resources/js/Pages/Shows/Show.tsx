@@ -162,6 +162,7 @@ export default function ShowPage({
                                         match={match}
                                         spoilersEnabled={spoilersEnabled}
                                         promotionName={show.promotion?.name}
+                                        promotionSlug={show.promotion?.slug}
                                     />
                                 ))}
                             </Box>

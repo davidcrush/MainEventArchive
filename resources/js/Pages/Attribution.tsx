@@ -40,6 +40,19 @@ export default function Attribution() {
                 </Box>
                 <Box>
                     <Heading size="sm" color="white" mb={2}>
+                        Promotion logos
+                    </Heading>
+                    <Text>
+                        Promotion logos on the Promotions page are sourced from{' '}
+                        <Link href="https://commons.wikimedia.org" color="mea.gold" target="_blank">
+                            Wikimedia Commons
+                        </Link>{' '}
+                        where tagged public domain. Trademarks may still apply; use is descriptive
+                        only. See our documentation for per-file sources.
+                    </Text>
+                </Box>
+                <Box>
+                    <Heading size="sm" color="white" mb={2}>
                         Third-party ratings
                     </Heading>
                     <Text>

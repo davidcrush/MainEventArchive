@@ -25,7 +25,18 @@ erDiagram
 | id | bigint | PK |
 | name | string | e.g. "World Championship Wrestling" |
 | slug | string | unique, URL-safe |
+| logo_path | string nullable | Path under `resources/images/` (e.g. `promotions/wcw.svg`) |
+| founded_year | smallint nullable | Year founded |
+| active_from_year | smallint nullable | First year of operation |
+| active_to_year | smallint nullable | Last year (null = ongoing) |
+| is_active | boolean | Still operating today |
+| headquarters | string nullable | e.g. "Atlanta, Georgia, U.S." |
+| description | text nullable | Curated summary; required for public index listing |
+| wikipedia_url | string nullable | Outbound Wikipedia link |
+| sort_order | smallint | Display order on `/promotions` |
 | timestamps | | |
+
+Public index: promotions with non-null `description`, ordered by `sort_order`. Profile fields seeded from [`config/promotions.php`](../../config/promotions.php) via `PromotionProfileSeeder`.
 
 ## Show
 

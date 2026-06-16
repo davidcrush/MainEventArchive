@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Badge, Box, Flex, Heading, Text } from '@chakra-ui/react';
-import ShowThumbnail from './ShowThumbnail';
+import PromotionLogo from './PromotionLogo';
 import RatingStars from './RatingStars';
 
 export interface ShowCardData {
@@ -50,7 +50,11 @@ export default function ShowCard({
                 }}
             >
                 <Flex gap={4} align="center">
-                    <ShowThumbnail promotionName={show.promotion?.name} size={thumbnailSize} />
+                    <PromotionLogo
+                        promotionSlug={show.promotion?.slug}
+                        promotionName={show.promotion?.name}
+                        size={thumbnailSize}
+                    />
                     <Box flex={1} minW={0}>
                         <Heading
                             size={isCarousel ? 'sm' : 'sm'}

@@ -100,6 +100,20 @@ Official PNGs from each platform’s brand kit. Do not recolor, stretch, or modi
 
 Frontend: `NetflixWatchButton` uses the **wordmark** on black. Accessible name stays in `aria-label`; trust copy below the button names the platform.
 
+### Promotion logos
+
+Sourced from [Wikimedia Commons](https://commons.wikimedia.org/) where tagged public domain (PD-textlogo). **Trademark rights may still apply** — use is nominative/descriptive in a wrestling catalog context only; no partnership implied.
+
+| File | Used in UI | Commons source | License notes |
+|------|------------|----------------|---------------|
+| [`promotions/wcw.svg`](../../resources/images/promotions/wcw.svg) | `PromotionLogo` (WCW) — white tile | [File:Wcw_logo.svg](https://commons.wikimedia.org/wiki/File:Wcw_logo.svg) | PD-textlogo; trademark may apply |
+| [`promotions/wwe.svg`](../../resources/images/promotions/wwe.svg) | `PromotionLogo` (WWE) — black tile | [File:WWE_official_logo.svg](https://commons.wikimedia.org/wiki/File:WWE_official_logo.svg) | PD-textlogo; trademark may apply |
+| [`promotions/aew.svg`](../../resources/images/promotions/aew.svg) | `PromotionLogo` (AEW) — white tile | [File:All Elite Wrestling logo 2024.svg](https://commons.wikimedia.org/wiki/File:All_Elite_Wrestling_logo_2024.svg) | PD-textlogo; trademark may apply |
+| [`promotions/tna.svg`](../../resources/images/promotions/tna.svg) | `PromotionLogo` (TNA) — **black tile** (gold mark; poor contrast on white) | [File:TNA Wrestling (2024) Logo.svg](https://commons.wikimedia.org/wiki/File:TNA_Wrestling_(2024)_Logo.svg) | PD-textlogo; trademark may apply |
+| [`promotions/ecw.svg`](../../resources/images/promotions/ecw.svg) | `PromotionLogo` (ECW) — white tile | [File:ECW logo 2001.svg](https://en.wikipedia.org/wiki/File:ECW_logo_2001.svg) (English Wikipedia) | Wikipedia-hosted logo; trademark may apply |
+
+Used on the promotions index, browse/show cards, home carousel, and match rows (via [`PromotionLogo`](../../resources/js/Components/PromotionLogo.tsx)). Curated promotion descriptions are staff/config authored for v1; `wikipedia_url` is link-out only until a Wikipedia import command exists.
+
 ## YouTube link-out
 
 MEA links out to YouTube for full-show viewing when a primary YouTube video exists; we never host video.

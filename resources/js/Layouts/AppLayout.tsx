@@ -52,6 +52,17 @@ export default function AppLayout({
                                 Browse
                             </Text>
                         </Link>
+                        <Link href={route('promotions.index')}>
+                            <Text
+                                color="white"
+                                fontSize="md"
+                                fontWeight="semibold"
+                                _hover={{ color: 'mea.gold' }}
+                                transition="color 0.15s"
+                            >
+                                Promotions
+                            </Text>
+                        </Link>
                         <Link href={route('watchlist.index')}>
                             <Text
                                 color="white"
