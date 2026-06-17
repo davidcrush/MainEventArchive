@@ -485,4 +485,28 @@ class YouTubeShowMatcherTest extends TestCase
         $this->assertCount(1, $result['links']);
         $this->assertSame('NXT The Great American Bash 2023', $result['links'][0]->show->title);
     }
+
+    public function test_match_wwe_nxt_maps_brooklyn_arabic_edition_without_year_in_youtube_title(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT TakeOver: Brooklyn IV 2018',
+            'date' => '2018-08-18',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'brooklyn-4',
+                'FULL EVENT: NXT TakeOver: Brooklyn 4 | Gargano vs. Ciampa in a Last Man Standing Match',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('NXT TakeOver: Brooklyn IV 2018', $result['links'][0]->show->title);
+    }
 }

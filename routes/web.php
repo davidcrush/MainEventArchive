@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttributionController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\KnownLimitationsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\RatingController;
@@ -21,6 +22,7 @@ Route::get('/search', SearchController::class)->name('search');
 Route::get('/shows/{slug}', [ShowController::class, 'show'])->name('shows.show');
 Route::get('/venues/{slug}', [VenueController::class, 'show'])->name('venues.show');
 Route::get('/attribution', AttributionController::class)->name('attribution');
+Route::get('/limitations', KnownLimitationsController::class)->name('limitations');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');

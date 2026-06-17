@@ -306,6 +306,12 @@ class YouTubeShowMatcher
         string $youtubeTitle = '',
     ): Collection {
         if ($year === null) {
+            $brooklynEdition = $this->findNxtBrooklynEditionCandidates($shows, $eventTitle, $matchedShowIds);
+
+            if ($brooklynEdition->isNotEmpty()) {
+                return $brooklynEdition;
+            }
+
             return $this->findCandidates($shows, $eventTitle, null, $matchedShowIds);
         }
 
@@ -351,6 +357,36 @@ class YouTubeShowMatcher
         }
 
         return $candidates;
+    }
+
+    /**
+     * YouTube often omits the year for numbered Brooklyn TakeOvers (e.g. "Brooklyn 4" vs catalog "Brooklyn IV 2018").
+     *
+     * @param  array<int, true>  $matchedShowIds
+     * @return Collection<int, Show>
+     */
+    private function findNxtBrooklynEditionCandidates(
+        Collection $shows,
+        string $eventTitle,
+        array $matchedShowIds,
+    ): Collection {
+        if (preg_match('/Brooklyn\s+([1-4])$/i', $eventTitle, $matches) !== 1) {
+            return collect();
+        }
+
+        $roman = ['1' => 'I', '2' => 'II', '3' => 'III', '4' => 'IV'][$matches[1]] ?? null;
+
+        if ($roman === null) {
+            return collect();
+        }
+
+        return $shows->filter(function (Show $show) use ($roman, $matchedShowIds): bool {
+            if (isset($matchedShowIds[$show->id])) {
+                return false;
+            }
+
+            return preg_match('/Brooklyn\s+'.$roman.'\b/i', $show->title) === 1;
+        })->values();
     }
 
     /**

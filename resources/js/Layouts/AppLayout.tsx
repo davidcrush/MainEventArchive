@@ -102,6 +102,9 @@ export default function AppLayout({
                         <BuiltByLink />
                     </Flex>
                     <Flex align="center" gap={3}>
+                        <Link href={route('limitations')}>
+                            <Text _hover={{ color: 'mea.gold' }}>Known limitations</Text>
+                        </Link>
                         <Link href={route('attribution')}>
                             <Text _hover={{ color: 'mea.gold' }}>Attribution</Text>
                         </Link>
