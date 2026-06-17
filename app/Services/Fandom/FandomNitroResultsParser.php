@@ -272,7 +272,7 @@ class FandomNitroResultsParser
             finish: $finish,
             durationSeconds: $this->parseDuration($time),
             isRateable: ! $isDark,
-            isPpv: false,
+            isPpv: ! $isDark,
         );
     }
 

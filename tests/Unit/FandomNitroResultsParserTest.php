@@ -60,8 +60,10 @@ WIKI;
 
         $this->assertCount(5, $matches);
 
-        foreach ($matches as $match) {
-            $this->assertFalse($match->isPpv, 'Nitro matches are never PPV.');
+        $this->assertFalse($matches[0]->isPpv, 'Dark match is off the public card.');
+
+        foreach (array_slice($matches, 1) as $match) {
+            $this->assertTrue($match->isPpv, 'Televised matches are on the public card.');
         }
     }
 
@@ -71,6 +73,7 @@ WIKI;
 
         $this->assertSame(1, $match->cardOrder);
         $this->assertFalse($match->isRateable);
+        $this->assertFalse($match->isPpv, 'Dark match is off the public card.');
         $this->assertNull($match->titleName);
         $this->assertNull($match->durationSeconds);
         $this->assertSame(['The Giant'], $this->winnerNames($match));
