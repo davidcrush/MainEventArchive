@@ -107,17 +107,20 @@ function MainEventPreviewText({
     preview: MainEventPreview;
     variant: 'default' | 'carousel';
 }) {
+    const mainEventLine = formatMainEventLine(preview);
+
     return (
         <Text
             color="mea.muted"
             fontSize={variant === 'carousel' ? 'xs' : 'sm'}
-            lineClamp={2}
+            lineClamp={1}
             mt={variant === 'carousel' ? 3 : 0}
+            title={mainEventLine}
         >
             <Text as="span" color="mea.gold" fontWeight="semibold">
                 Main event:{' '}
             </Text>
-            {formatMainEventLine(preview)}
+            {mainEventLine}
         </Text>
     );
 }
@@ -136,14 +139,16 @@ export default function ShowCard({
     const locationLine = formatLocationLine(show.venue, show.city);
 
     return (
-        <Link href={route('shows.show', show.slug)}>
+        <Link href={route('shows.show', show.slug)} display="block" h={isCarousel ? undefined : '100%'}>
             <Box
                 bg="mea.surface"
                 borderWidth="1px"
                 borderColor="mea.border"
                 borderRadius="xl"
                 p={isCarousel ? 4 : { base: 5, md: 6 }}
-                h={isCarousel ? '100%' : undefined}
+                h={isCarousel ? '100%' : '100%'}
+                display="flex"
+                flexDirection="column"
                 transition="all 0.2s"
                 _hover={{
                     borderColor: 'mea.gold',
@@ -151,25 +156,31 @@ export default function ShowCard({
                     boxShadow: 'cardHover',
                 }}
             >
-                <Flex gap={4} align="flex-start">
+                <Flex gap={4} align="flex-start" flex={1}>
                     <PromotionLogo
                         promotionSlug={show.promotion?.slug}
                         promotionName={show.promotion?.name}
                         size={thumbnailSize}
                     />
                     <Box flex={1} minW={0}>
-                        <Heading size={isCarousel ? 'sm' : 'md'} mb={1} lineClamp={2}>
+                        <Heading size={isCarousel ? 'sm' : 'md'} mb={1} lineClamp={2} minH="2.75rem">
                             {show.title}
                         </Heading>
-                        <Text color="mea.muted" fontSize="sm" mb={locationLine ? 1 : 3}>
+                        <Text color="mea.muted" fontSize="sm" mb={1}>
                             {formatDate(show.date)}
                         </Text>
-                        {locationLine ? (
-                            <Text color="mea.muted" fontSize="sm" mb={3} lineClamp={2}>
-                                {locationLine}
-                            </Text>
-                        ) : null}
-                        <Flex align="center" gap={2} flexWrap="wrap">
+                        <Text
+                            color="mea.muted"
+                            fontSize="sm"
+                            mb={3}
+                            lineClamp={1}
+                            minH="1.25rem"
+                            title={locationLine ?? undefined}
+                            visibility={locationLine ? 'visible' : 'hidden'}
+                        >
+                            {locationLine ?? '\u00A0'}
+                        </Text>
+                        <Flex align="center" gap={2} flexWrap="wrap" minH="1.5rem">
                             <Badge
                                 bg="mea.surfaceAlt"
                                 color="mea.muted"
@@ -209,7 +220,13 @@ export default function ShowCard({
                     isCarousel ? (
                         <MainEventPreviewText preview={mainEventPreview} variant="carousel" />
                     ) : (
-                        <Box mt={4} pt={3} borderTopWidth="1px" borderColor="mea.border">
+                        <Box
+                            mt={4}
+                            pt={3}
+                            borderTopWidth="1px"
+                            borderColor="mea.border"
+                            minH="2.25rem"
+                        >
                             <MainEventPreviewText preview={mainEventPreview} variant="default" />
                         </Box>
                     )
@@ -222,6 +239,8 @@ export default function ShowCard({
                         fontSize="sm"
                         color="mea.muted"
                         fontStyle="italic"
+                        lineClamp={1}
+                        minH="2.25rem"
                     >
                         Match card not available yet
                     </Text>
