@@ -5,23 +5,22 @@ namespace App\Importers;
 use App\Contracts\ShowDataImporter;
 use App\Data\ImportRequest;
 use App\Data\ImportResult;
-use App\Data\ParsedWikipediaMatch;
 use App\Data\ResolvedWikipediaPage;
 use App\Exceptions\WikipediaImportResolutionException;
-use App\Models\MatchParticipant;
+use App\Importers\Concerns\PersistsParsedMatches;
 use App\Models\Show;
 use App\Models\Venue;
-use App\Models\WrestlingMatch;
 use App\Services\Wikipedia\WikipediaImportPageResolver;
 use App\Services\Wikipedia\WikipediaInfoboxParser;
 use App\Services\Wikipedia\WikipediaPageTitleResolver;
 use App\Services\Wikipedia\WikipediaResultsParser;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class WikipediaShowImporter implements ShowDataImporter
 {
+    use PersistsParsedMatches;
+
     public function __construct(
         private readonly WikipediaImportPageResolver $pageResolver,
         private readonly WikipediaPageTitleResolver $pageTitleResolver,
@@ -48,7 +47,7 @@ class WikipediaShowImporter implements ShowDataImporter
                 [$page, $attempts, $declaredMatchCount] = $this->pageResolver->resolve($show);
                 $parsedMatches = $this->resultsParser->parse($page->wikitext, $page->canonicalTitle, $show->title);
                 $metadata = $this->infoboxParser->parse($page->wikitext, $page->canonicalTitle, $show->title);
-                $importedMatchCount = $this->persistMatches($show, $parsedMatches, $page->canonicalTitle);
+                $importedMatchCount = $this->persistMatches($show, $parsedMatches);
 
                 if ($importedMatchCount !== $declaredMatchCount) {
                     throw new RuntimeException("Imported {$importedMatchCount} matches but Wikipedia declares {$declaredMatchCount} for [{$show->title}].");
@@ -145,45 +144,6 @@ class WikipediaShowImporter implements ShowDataImporter
         $show->update(['venue_id' => $venue->id]);
 
         return $venue;
-    }
-
-    /**
-     * @param  list<ParsedWikipediaMatch>  $parsedMatches
-     */
-    private function persistMatches(Show $show, array $parsedMatches, string $pageTitle): int
-    {
-        return DB::transaction(function () use ($show, $parsedMatches): int {
-            $show->matches()->each(function (WrestlingMatch $match): void {
-                $match->participants()->delete();
-                $match->delete();
-            });
-
-            foreach ($parsedMatches as $parsedMatch) {
-                $match = WrestlingMatch::query()->create([
-                    'show_id' => $show->id,
-                    'card_order' => $parsedMatch->cardOrder,
-                    'match_type' => $parsedMatch->matchType,
-                    'title_name' => $parsedMatch->titleName,
-                    'entrant_names' => $parsedMatch->entrantNames !== [] ? $parsedMatch->entrantNames : null,
-                    'is_rateable' => $parsedMatch->isRateable,
-                    'is_ppv' => $parsedMatch->isPpv,
-                    'winner_side' => $parsedMatch->winnerSide,
-                    'finish' => $parsedMatch->finish,
-                    'duration_seconds' => $parsedMatch->durationSeconds,
-                ]);
-
-                foreach ($parsedMatch->participants as $participant) {
-                    MatchParticipant::query()->create([
-                        'match_id' => $match->id,
-                        'name' => $participant['name'],
-                        'side' => $participant['side'],
-                        'sort_order' => $participant['sort_order'],
-                    ]);
-                }
-            }
-
-            return count($parsedMatches);
-        });
     }
 
     private function resolveShows(ImportRequest $request)

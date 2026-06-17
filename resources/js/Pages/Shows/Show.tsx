@@ -4,6 +4,7 @@ import MatchRow, { MatchData } from '@/Components/MatchRow';
 import RatingStars from '@/Components/RatingStars';
 import SpoilerToggle from '@/Components/SpoilerToggle';
 import VideoPlaceholder, { WatchTarget } from '@/Components/VideoPlaceholder';
+import FandomSourceBadge from '@/Components/FandomSourceBadge';
 import WikidataSourceBadge from '@/Components/WikidataSourceBadge';
 import WikipediaSourceBadge, { isWikipediaSourceUrl } from '@/Components/WikipediaSourceBadge';
 import { Link, router } from '@inertiajs/react';
@@ -92,6 +93,7 @@ export default function ShowPage({
     const showWikipediaBadge =
         isWikipediaSourceUrl(show.source_url) ||
         (show.source === 'wikipedia' && !!show.source_url);
+    const showFandomBadge = show.source === 'fandom' && !!show.source_url;
 
     return (
         <AppLayout>
@@ -211,6 +213,9 @@ export default function ShowPage({
                             ) : null}
                             {showWikipediaBadge && show.source_url ? (
                                 <WikipediaSourceBadge url={show.source_url} />
+                            ) : null}
+                            {showFandomBadge && show.source_url ? (
+                                <FandomSourceBadge url={show.source_url} />
                             ) : null}
                             {show.cagematch_url ? <CagematchBadge url={show.cagematch_url} /> : null}
                         </Flex>

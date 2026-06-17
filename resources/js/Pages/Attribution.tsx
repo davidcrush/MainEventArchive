@@ -40,6 +40,24 @@ export default function Attribution() {
                 </Box>
                 <Box>
                     <Heading size="sm" color="white" mb={2}>
+                        Fandom (Pro Wrestling Wiki)
+                    </Heading>
+                    <Text>
+                        Some television match cards (e.g. WCW Monday Nitro episodes) are adapted from
+                        the{' '}
+                        <Link
+                            href="https://prowrestling.fandom.com"
+                            color="mea.gold"
+                            target="_blank"
+                        >
+                            Pro Wrestling Wiki on Fandom
+                        </Link>{' '}
+                        via the MediaWiki API (CC BY-SA 3.0). Adapted content is attributed to its
+                        contributors, and show pages link back to the source episode article.
+                    </Text>
+                </Box>
+                <Box>
+                    <Heading size="sm" color="white" mb={2}>
                         Promotion logos
                     </Heading>
                     <Text>

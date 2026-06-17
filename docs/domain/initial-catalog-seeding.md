@@ -94,7 +94,7 @@ vendor/bin/sail artisan db:seed --class=WcwClashCatalogSeeder
 
 ### 4. WCW Monday Nitro (1996)
 
-Weekly TV episodes (`show_type = tv`). Curated list in `database/seeders/data/wcw_nitro_1996.php`. No match cards in v1.
+Weekly TV episodes (`show_type = tv`). Curated list in `database/seeders/data/wcw_nitro_1996.php`. Match cards are imported separately from Fandom (see *Nitro — match cards from Fandom* below); the seeder only creates the show shells.
 
 ```bash
 vendor/bin/sail artisan db:seed --class=WcwNitroCatalogSeeder
@@ -167,6 +167,20 @@ vendor/bin/sail artisan shows:import-nitro-metadata
 ```
 
 Merges sparse TV ratings and venue/city from Wikipedia’s notable-episodes section by air date.
+
+### Nitro — match cards from Fandom
+
+TV episodes have no individual Wikipedia results pages, so match cards come from [prowrestling.fandom.com](https://prowrestling.fandom.com) (MediaWiki API, CC BY-SA 3.0). Pages are resolved by air date (`"{F j, Y} Monday Nitro results"`).
+
+```bash
+vendor/bin/sail artisan shows:import-nitro-cards --promotion=wcw
+# Optional scoping:
+vendor/bin/sail artisan shows:import-nitro-cards --from=1996-01-01 --to=1996-12-31
+vendor/bin/sail artisan shows:import-nitro-cards --identifier=<show-slug>
+vendor/bin/sail artisan shows:import-nitro-cards --dry-run
+```
+
+Only enriches Nitro shows already in the catalog (currently 1996). Cards are stored with spoiler-safe participant ordering, dark matches flagged non-rateable, and draws stored with `winner_side = null`. If the parsed match count disagrees with the page's declared bullet count, the show is **skipped** (left for review) so partial/leaky cards are never stored. Sets `source = fandom` and links the source page; the show page renders a Fandom attribution badge.
 
 ### Venues — structured `venues` rows
 

@@ -12,6 +12,7 @@ This document records product and technical decisions for Main Event Archive (ME
 | Spoilers | Default off; hard vs soft tiers (see [spoiler-rules.md](../domain/spoiler-rules.md)) |
 | Third-party ratings | Cagematch link-out badge only — no scores cached or displayed |
 | Data seed | Wikidata + Wikipedia API (not scraping proprietary DBs) |
+| Nitro match cards | Sourced from [prowrestling.fandom.com](https://prowrestling.fandom.com) via MediaWiki API (CC BY-SA 3.0); attributed on show pages + Attribution page. TV episodes have no individual Wikipedia results pages, so Fandom fills the gap. Imported via `shows:import-nitro-cards`. |
 | Content maintenance | Staff admin UI only (no public submissions in v1) |
 
 ## Recommended defaults (implement unless changed)
@@ -86,6 +87,12 @@ This document records product and technical decisions for Main Event Archive (ME
 ### Duplicate YouTube sources
 
 - One canonical `Show` with multiple `Video` / `VideoSource` records ranked by staff (primary + fallbacks)
+
+### Show card clickability & "missing card" indicator (deferred to its own change)
+
+- **Clickable rule (lenient):** A show is clickable to its detail page when it has **any** displayable detail — matches, video, **or** metadata (venue / city / rating / episode number). We do not block click-through just because a card is missing.
+- **Missing-card indicator (separate, future change):** Show a card-level badge when match data is missing, mirroring the existing `Video` badge in [`ShowCard.tsx`](../../resources/js/Components/ShowCard.tsx), so users know before clicking in. Same pattern intended for missing video.
+- **Status:** Decisions recorded now; implementation is a follow-up change (not included with the Fandom Nitro import work).
 
 ## Still TBD before specific features ship
 
