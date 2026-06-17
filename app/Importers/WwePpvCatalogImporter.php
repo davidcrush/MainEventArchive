@@ -30,6 +30,7 @@ class WwePpvCatalogImporter
         'docs/third-party/cagematch/WWE-PPVs-2010-2003.mhtml',
         'docs/third-party/cagematch/WWE-PPVs-2016-2010.mhtml',
         'docs/third-party/cagematch/WWE-PPVs-2021-2016.mhtml',
+        'docs/third-party/cagematch/WWE-PPVs-2026-2021.mhtml',
     ];
 
     public function __construct(
@@ -130,13 +131,52 @@ class WwePpvCatalogImporter
                     continue;
                 }
 
-                $byDate[$event->date->toDateString()] = $event;
+                $this->mergeEventByDate($byDate, $event);
             }
         }
 
         ksort($byDate);
 
         return array_values($byDate);
+    }
+
+    /**
+     * @param  array<string, CagematchEvent>  $byDate
+     */
+    private function mergeEventByDate(array &$byDate, CagematchEvent $event): void
+    {
+        $date = $event->date->toDateString();
+
+        if (! isset($byDate[$date])) {
+            $byDate[$date] = $event;
+
+            return;
+        }
+
+        if ($this->shouldReplaceEvent($byDate[$date], $event)) {
+            $byDate[$date] = $event;
+        }
+    }
+
+    private function shouldReplaceEvent(CagematchEvent $existing, CagematchEvent $incoming): bool
+    {
+        $existingIsNxt = $this->isNxtEvent($existing->title);
+        $incomingIsNxt = $this->isNxtEvent($incoming->title);
+
+        if ($existingIsNxt && ! $incomingIsNxt) {
+            return true;
+        }
+
+        if (! $existingIsNxt && $incomingIsNxt) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isNxtEvent(string $title): bool
+    {
+        return stripos($title, 'NXT') !== false;
     }
 
     private function resolveShowForDate(int $promotionId, string $date): ?Show

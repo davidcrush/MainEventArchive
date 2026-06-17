@@ -36,6 +36,43 @@ class SeedWwePpvCatalogCommandTest extends TestCase
         $this->assertSame('TLC: Tables, Ladders & Chairs 2020', $shows->last()->title);
     }
 
+    public function test_command_creates_one_hundred_six_wwe_ppvs_from_2021_to_2026(): void
+    {
+        $this->artisan('shows:seed-wwe-ppv-catalog', ['--from' => '2021', '--to' => '2026'])
+            ->assertExitCode(0);
+
+        $promotion = Promotion::query()->where('slug', 'wwe')->first();
+
+        $this->assertNotNull($promotion);
+
+        $shows = Show::query()
+            ->where('promotion_id', $promotion->id)
+            ->where('show_type', ShowType::Ppv)
+            ->whereBetween('date', ['2021-01-01', '2026-12-31'])
+            ->orderBy('date')
+            ->get();
+
+        $this->assertCount(106, $shows);
+        $this->assertTrue($shows->every(fn (Show $show) => $show->status === ShowStatus::PendingReview));
+        $this->assertSame('Superstar Spectacle 2021', $shows->first()->title);
+        $this->assertSame('2021-01-22', $shows->first()->date->toDateString());
+        $this->assertSame('Money In The Bank 2026', $shows->last()->title);
+        $this->assertSame('2026-10-10', $shows->last()->date->toDateString());
+
+        $wrestleManiaDates = [
+            '2022-04-02' => 'WrestleMania 38 2022',
+            '2023-04-01' => 'WrestleMania 39 2023',
+            '2024-04-06' => 'WrestleMania XL 2024',
+            '2025-04-19' => 'WrestleMania 41 2025',
+        ];
+
+        foreach ($wrestleManiaDates as $date => $title) {
+            $show = $shows->firstWhere(fn (Show $show) => $show->date->toDateString() === $date);
+            $this->assertNotNull($show, "Missing show on {$date}");
+            $this->assertSame($title, $show->title);
+        }
+    }
+
     public function test_command_creates_one_hundred_twenty_wwe_ppvs_from_2002_to_2010(): void
     {
         $this->artisan('shows:seed-wwe-ppv-catalog', ['--from' => '2002', '--to' => '2010'])

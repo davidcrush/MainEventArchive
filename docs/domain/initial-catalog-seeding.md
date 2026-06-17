@@ -135,8 +135,7 @@ Built from bundled Cagematch saves (merged by air date, no duplicates):
 | `docs/third-party/cagematch/WWE-PPVs-2010-2003.mhtml` | 2003–2010 |
 | `docs/third-party/cagematch/WWE-PPVs-2016-2010.mhtml` | 2010–2016 |
 | `docs/third-party/cagematch/WWE-PPVs-2021-2016.mhtml` | 2016–2021 |
-
-Optional for future 2021+ rollout: `WWE-PPVs-2026-2021.mhtml`.
+| `docs/third-party/cagematch/WWE-PPVs-2026-2021.mhtml` | 2021–2026 |
 
 Creates PPV rows for slug `wwe` (**World Wrestling Entertainment**). Cagematch `WWF` prefixes are stripped from stored titles (e.g. `Royal Rumble 1996`).
 
@@ -146,6 +145,7 @@ Creates PPV rows for slug `wwe` (**World Wrestling Entertainment**). Cagematch `
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1996 --to=2001
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2011 --to=2020
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2021 --to=2026
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1985 --to=1995
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2011 --to=2020 --dry-run
 ```
@@ -246,6 +246,12 @@ vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2011 --to=2020
 vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=2011 --to=2020 --workers=4
 vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=2011 --to=2020
 vendor/bin/sail artisan shows:verify-wikipedia --promotion=wwe --from=2011 --to=2020
+
+# Expansion era (2021–2026) — WrestleMania preferred over NXT Stand & Deliver on same date
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2021 --to=2026
+vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=2021 --to=2026 --workers=4
+vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=2021 --to=2026
+vendor/bin/sail artisan shows:verify-wikipedia --promotion=wwe --from=2021 --to=2026
 ```
 
 Follow-up backfill (1985–1995): same commands with `--from=1985 --to=1995`.
