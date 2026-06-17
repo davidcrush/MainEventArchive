@@ -1,4 +1,5 @@
 import BrandLogo from '@/Components/BrandLogo';
+import BuiltByLink from '@/Components/BuiltByLink';
 import GitHubRepoLink from '@/Components/GitHubRepoLink';
 import { Link, usePage } from '@inertiajs/react';
 import { Box, Flex, Text } from '@chakra-ui/react';
@@ -96,7 +97,10 @@ export default function AppLayout({
                     flexWrap="wrap"
                     gap={2}
                 >
-                    <Text>Main Event Archive — spoiler-safe wrestling catalog</Text>
+                    <Flex direction="column" gap={1}>
+                        <Text>Main Event Archive — spoiler-safe wrestling catalog</Text>
+                        <BuiltByLink />
+                    </Flex>
                     <Flex align="center" gap={3}>
                         <Link href={route('attribution')}>
                             <Text _hover={{ color: 'mea.gold' }}>Attribution</Text>
