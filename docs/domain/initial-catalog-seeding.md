@@ -92,13 +92,24 @@ TV specials (`show_type = tv`). Curated list in `database/seeders/data/wcw_clash
 vendor/bin/sail artisan db:seed --class=WcwClashCatalogSeeder
 ```
 
-### 4. WCW Monday Nitro (1996)
+### 4. WCW Monday Nitro (full run, 1995–2001)
 
-Weekly TV episodes (`show_type = tv`). Curated list in `database/seeders/data/wcw_nitro_1996.php`. Match cards are imported separately from Fandom (see *Nitro — match cards from Fandom* below); the seeder only creates the show shells.
+Weekly TV episodes (`show_type = tv`). The full episode catalog is seeded from Fandom's `Template:WCW Nitro results` navbox — one `pending_review` shell per episode, numbered chronologically from the Sep 4, 1995 premiere (#1). The command is idempotent (matched by air date) and safe to re-run.
 
 ```bash
-vendor/bin/sail artisan db:seed --class=WcwNitroCatalogSeeder
+vendor/bin/sail artisan shows:seed-nitro-catalog --promotion=wcw
+# Optional scoping by year:
+vendor/bin/sail artisan shows:seed-nitro-catalog --from=1997 --to=2001
+vendor/bin/sail artisan shows:seed-nitro-catalog --dry-run
 ```
+
+Then fill match cards and venue/city via Fandom (see *Nitro — match cards from Fandom* below):
+
+```bash
+vendor/bin/sail artisan shows:import-nitro-cards --promotion=wcw
+```
+
+> The legacy offline seeder `WcwNitroCatalogSeeder` (curated `database/seeders/data/wcw_nitro_1996.php`, 1996 only) still works for an offline 1996 bootstrap, but `shows:seed-nitro-catalog` is now the canonical, full-run source and supersedes it.
 
 ### One-liner (local or prod)
 
@@ -180,7 +191,7 @@ vendor/bin/sail artisan shows:import-nitro-cards --identifier=<show-slug>
 vendor/bin/sail artisan shows:import-nitro-cards --dry-run
 ```
 
-Only enriches Nitro shows already in the catalog (currently 1996). Cards are stored with spoiler-safe participant ordering, dark matches flagged non-rateable, and draws stored with `winner_side = null`. If the parsed match count disagrees with the page's declared bullet count, the show is **skipped** (left for review) so partial/leaky cards are never stored. Sets `source = fandom` and links the source page; the show page renders a Fandom attribution badge.
+Only enriches Nitro shows already in the catalog (seed them first with `shows:seed-nitro-catalog`). Cards are stored with spoiler-safe participant ordering, dark matches flagged non-rateable, and draws stored with `winner_side = null`. Venue/city are captured from the episode infobox in the same pass (only when currently empty, so curated values are never overwritten). If the parsed match count disagrees with the page's declared bullet count, the show is **skipped** (left for review) so partial/leaky cards are never stored. Sets `source = fandom` and links the source page; the show page renders a Fandom attribution badge.
 
 ### Venues — structured `venues` rows
 

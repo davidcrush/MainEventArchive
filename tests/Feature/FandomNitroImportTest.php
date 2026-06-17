@@ -44,9 +44,16 @@ class FandomNitroImportTest extends TestCase
         $promotion = Promotion::factory()->wcw()->create();
         $show = Show::factory()->nitroEpisode(37)->create([
             'promotion_id' => $promotion->id,
+            'venue' => null,
+            'city' => null,
         ]);
 
         $this->fakeResultsPage(<<<'WIKI'
+{{Infobox Wrestling episode
+| date = [[September 9]], [[1996]]
+| venue = [[Wichita State University]]
+| city = [[Wichita, Kansas]]
+}}
 ==Results==
 *[[Dark Match]]: [[The Giant]] defeated [[Johnny B. Badd]]
 *[[Randy Savage]] defeated [[Ric Flair]] (c) to win the [[WCW World Heavyweight Championship]] (8:35)
@@ -60,6 +67,8 @@ WIKI);
         $this->assertSame('fandom', $show->source);
         $this->assertStringContainsString('prowrestling.fandom.com/wiki/', (string) $show->source_url);
         $this->assertNotNull($show->imported_at);
+        $this->assertSame('Wichita State University', $show->venue);
+        $this->assertSame('Wichita, Kansas', $show->city);
 
         $matches = $show->matches()->with('participants')->orderBy('card_order')->get();
         $this->assertCount(2, $matches);

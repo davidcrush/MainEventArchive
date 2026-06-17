@@ -7,6 +7,7 @@ use App\Exceptions\WikipediaMatchCountMismatchException;
 use App\Importers\Concerns\PersistsParsedMatches;
 use App\Models\Promotion;
 use App\Models\Show;
+use App\Services\Fandom\FandomNitroInfoboxParser;
 use App\Services\Fandom\FandomNitroPageResolver;
 use App\Services\Fandom\FandomNitroResultsParser;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,6 +30,7 @@ class FandomNitroImporter
     public function __construct(
         private readonly FandomNitroPageResolver $pageResolver,
         private readonly FandomNitroResultsParser $resultsParser,
+        private readonly FandomNitroInfoboxParser $infoboxParser,
     ) {}
 
     /**
@@ -57,11 +59,23 @@ class FandomNitroImporter
                 if (! $dryRun) {
                     $this->persistMatches($show, $parsedMatches);
 
-                    $show->update([
+                    $updates = [
                         'source' => 'fandom',
                         'source_url' => 'https://prowrestling.fandom.com/wiki/'.str_replace(' ', '_', $page->canonicalTitle),
                         'imported_at' => now(),
-                    ]);
+                    ];
+
+                    $infobox = $this->infoboxParser->parse($page->wikitext);
+
+                    if (($show->venue === null || $show->venue === '') && $infobox['venue'] !== null) {
+                        $updates['venue'] = $infobox['venue'];
+                    }
+
+                    if (($show->city === null || $show->city === '') && $infobox['city'] !== null) {
+                        $updates['city'] = $infobox['city'];
+                    }
+
+                    $show->update($updates);
                 }
 
                 $imported++;
