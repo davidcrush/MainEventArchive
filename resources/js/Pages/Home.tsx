@@ -2,7 +2,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import FeaturedCarousel from '@/Components/FeaturedCarousel';
 import { ShowCardData } from '@/Components/ShowCard';
 import { Box, Flex, Heading, Text } from '@chakra-ui/react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import heroRing from '../../images/hero-ring.jpg';
 
 export default function Home({ featuredShows }: { featuredShows: ShowCardData[] }) {
@@ -49,20 +49,26 @@ export default function Home({ featuredShows }: { featuredShows: ShowCardData[] 
                         Spoiler-Safe Browsing
                     </Text>
                     <Flex justify="center">
-                        <Box
-                            bgGradient="to-r"
-                            gradientFrom="mea.gold"
-                            gradientTo="mea.goldBright"
-                            color="mea.bg"
-                            px={{ base: 5, md: 8 }}
-                            py={{ base: 3, md: 4 }}
-                            borderRadius="full"
-                            fontWeight="bold"
-                            fontSize={{ base: 'sm', md: 'md' }}
-                            boxShadow="goldGlow"
-                        >
-                            Catalog live now — video linking on the way
-                        </Box>
+                        <Link href={route('browse')} style={{ textDecoration: 'none' }}>
+                            <Box
+                                bgGradient="to-r"
+                                gradientFrom="mea.gold"
+                                gradientTo="mea.goldBright"
+                                color="mea.bg"
+                                px={{ base: 5, md: 8 }}
+                                py={{ base: 3, md: 4 }}
+                                borderRadius="full"
+                                fontWeight="bold"
+                                fontSize={{ base: 'sm', md: 'md' }}
+                                boxShadow="goldGlow"
+                                transition="all 0.2s"
+                                _hover={{
+                                    transform: 'translateY(-2px)',
+                                }}
+                            >
+                                Browse Shows
+                            </Box>
+                        </Link>
                     </Flex>
                 </Box>
             </Box>
