@@ -139,7 +139,11 @@ export default function ShowCard({
     const locationLine = formatLocationLine(show.venue, show.city);
 
     return (
-        <Link href={route('shows.show', show.slug)} display="block" h={isCarousel ? undefined : '100%'}>
+        <Box h={isCarousel ? undefined : '100%'}>
+            <Link
+                href={route('shows.show', show.slug)}
+                style={{ display: 'block', height: '100%', textDecoration: 'none' }}
+            >
             <Box
                 bg="mea.surface"
                 borderWidth="1px"
@@ -246,6 +250,7 @@ export default function ShowCard({
                     </Text>
                 ) : null}
             </Box>
-        </Link>
+            </Link>
+        </Box>
     );
 }
