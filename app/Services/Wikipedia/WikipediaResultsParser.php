@@ -104,11 +104,8 @@ class WikipediaResultsParser
 
     private function countDeclaredTemplateMatches(string $section): int
     {
-        if (preg_match('/\{\{Pro [Ww]restling results table(.*?)\n\s*\}\}/is', $section, $templateMatch) !== 1) {
-            throw new RuntimeException('Results section does not contain a Pro Wrestling results table.');
-        }
-
-        $parameters = $this->parseTemplateParameters($templateMatch[1]);
+        $body = $this->extractProWrestlingResultsTemplateBody($section);
+        $parameters = $this->parseTemplateParameters($body);
         $count = 0;
 
         foreach ($parameters as $key => $value) {
@@ -167,11 +164,7 @@ class WikipediaResultsParser
      */
     private function parseProWrestlingResultsTemplate(string $section): array
     {
-        if (preg_match('/\{\{Pro [Ww]restling results table(.*?)\n\s*\}\}/is', $section, $templateMatch) !== 1) {
-            throw new RuntimeException('Results section does not contain a Pro Wrestling results table.');
-        }
-
-        $body = $templateMatch[1];
+        $body = $this->extractProWrestlingResultsTemplateBody($section);
         $parameters = $this->parseTemplateParameters($body);
         $matches = [];
         $matchIndexes = [];
@@ -209,6 +202,50 @@ class WikipediaResultsParser
         }
 
         return $matches;
+    }
+
+    /**
+     * Extract the inner body of {{Pro Wrestling results table ...}} while tolerating
+     * nested templates (e.g. {{cite web}} in |results) and closing }} on the same
+     * line as the final parameter.
+     */
+    private function extractProWrestlingResultsTemplateBody(string $section): string
+    {
+        if (preg_match('/\{\{Pro [Ww]restling results table/is', $section, $startMatch, PREG_OFFSET_CAPTURE) !== 1) {
+            throw new RuntimeException('Results section does not contain a Pro Wrestling results table.');
+        }
+
+        $start = $startMatch[0][1] + strlen($startMatch[0][0]);
+        $depth = 2;
+        $length = strlen($section);
+        $body = '';
+
+        for ($index = $start; $index < $length; $index++) {
+            if ($index < $length - 1 && $section[$index] === '{' && $section[$index + 1] === '{') {
+                $depth += 2;
+                $body .= '{{';
+                $index++;
+
+                continue;
+            }
+
+            if ($index < $length - 1 && $section[$index] === '}' && $section[$index + 1] === '}') {
+                $depth -= 2;
+
+                if ($depth === 0) {
+                    return $body;
+                }
+
+                $body .= '}}';
+                $index++;
+
+                continue;
+            }
+
+            $body .= $section[$index];
+        }
+
+        throw new RuntimeException('Results section does not contain a Pro Wrestling results table.');
     }
 
     /**

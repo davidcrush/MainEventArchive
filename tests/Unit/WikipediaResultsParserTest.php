@@ -416,6 +416,34 @@ WIKI;
         $this->assertTrue($matches[1]->isPpv);
     }
 
+    public function test_parses_pro_wrestling_results_table_with_nested_cite_refs_and_inline_closing_braces(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+{{Pro Wrestling results table
+|results = <ref name=pwh>{{cite web|url=https://example.com|title=SummerSlam 2005}}</ref>
+|times = <ref name=pwh/>
+|note1 = heat
+|match1 = [[Chris Masters]] defeated [[Gregory Helms|The Hurricane]]
+|stip1 = Singles match
+|time1 = 1:56
+|match2 = [[Edge (wrestler)|Edge]] defeated [[Matt Hardy]] by Technical Knockout
+|stip2 = Singles match
+|time2 = 4:50}}
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(2, $matches);
+        $this->assertFalse($matches[0]->isPpv);
+        $this->assertContains('Chris Masters', array_column($matches[0]->participants, 'name'));
+        $this->assertContains('The Hurricane', array_column($matches[0]->participants, 'name'));
+        $this->assertTrue($matches[1]->isPpv);
+        $this->assertSame('Technical Knockout', $matches[1]->finish);
+        $this->assertContains('Edge', array_column($matches[1]->participants, 'name'));
+        $this->assertContains('Matt Hardy', array_column($matches[1]->participants, 'name'));
+    }
+
     public function test_parses_wikitable_heat_suffix_as_pre_show(): void
     {
         $wikitext = <<<'WIKI'
