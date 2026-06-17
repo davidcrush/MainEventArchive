@@ -1,26 +1,20 @@
-import { Button, Flex, Text } from '@chakra-ui/react';
-import { router, usePage } from '@inertiajs/react';
+import { Button, Flex, IconButton, Text } from '@chakra-ui/react';
+import { getLocalRating, setLocalRating } from '@/lib/localRatings';
+import { useEffect, useState } from 'react';
 
-function StarDisplay({ average, count }: { average?: number; count?: number }) {
-    const filled = Math.round(average ?? 0);
-
+function UserRatingDisplay({ stars, compact = false }: { stars: number; compact?: boolean }) {
     return (
         <Flex align="center" gap={1}>
             {[1, 2, 3, 4, 5].map((star) => (
                 <Text
                     key={star}
-                    fontSize="sm"
-                    color={star <= filled ? 'mea.gold' : 'mea.border'}
+                    fontSize={compact ? 'xs' : 'sm'}
+                    color={star <= stars ? 'mea.gold' : 'mea.border'}
                     lineHeight={1}
                 >
                     ★
                 </Text>
             ))}
-            {count !== undefined && count > 0 && average !== undefined ? (
-                <Text fontSize="xs" color="mea.muted" ml={1}>
-                    {average.toFixed(1)} ({count})
-                </Text>
-            ) : null}
         </Flex>
     );
 }
@@ -28,32 +22,39 @@ function StarDisplay({ average, count }: { average?: number; count?: number }) {
 export default function RatingStars({
     rateableType,
     rateableId,
-    average,
-    count,
     compact = false,
     label,
 }: {
-    rateableType?: 'show' | 'match';
-    rateableId?: number;
-    average?: number;
-    count?: number;
+    rateableType: 'show' | 'match';
+    rateableId: number;
     compact?: boolean;
     label?: string;
 }) {
-    const { auth } = usePage().props as { auth: { user?: { email_verified_at?: string } } };
-    const canRate = !!auth.user?.email_verified_at && rateableType && rateableId;
+    const [userRating, setUserRating] = useState<number | null>(() =>
+        getLocalRating(rateableType, rateableId),
+    );
+    const [isEditing, setIsEditing] = useState(false);
+
+    useEffect(() => {
+        setUserRating(getLocalRating(rateableType, rateableId));
+        setIsEditing(false);
+    }, [rateableType, rateableId]);
 
     if (compact) {
-        if (!count || count === 0) {
-            return (
-                <Text fontSize="xs" color="mea.muted">
-                    No ratings yet
-                </Text>
-            );
+        if (userRating == null) {
+            return null;
         }
 
-        return <StarDisplay average={average} count={count} />;
+        return <UserRatingDisplay stars={userRating} compact />;
     }
+
+    const showRatingInput = userRating == null || isEditing;
+
+    const handleRate = (stars: number) => {
+        setLocalRating(rateableType, rateableId, stars);
+        setUserRating(stars);
+        setIsEditing(false);
+    };
 
     return (
         <Flex direction="column" gap={2}>
@@ -63,15 +64,27 @@ export default function RatingStars({
                 </Text>
             ) : null}
 
-            {count !== undefined && count > 0 && average !== undefined ? (
-                <StarDisplay average={average} count={count} />
-            ) : (
-                <Text fontSize="sm" color="mea.muted">
-                    No MEA ratings yet
-                </Text>
-            )}
+            {userRating != null && !isEditing ? (
+                <Flex align="center" gap={1}>
+                    <UserRatingDisplay stars={userRating} />
+                    <IconButton
+                        aria-label="Edit rating"
+                        size="xs"
+                        variant="ghost"
+                        color="mea.muted"
+                        minW="auto"
+                        h="auto"
+                        px={1}
+                        fontSize="xs"
+                        onClick={() => setIsEditing(true)}
+                        _hover={{ color: 'mea.gold', bg: 'whiteAlpha.100' }}
+                    >
+                        ✎
+                    </IconButton>
+                </Flex>
+            ) : null}
 
-            {canRate ? (
+            {showRatingInput ? (
                 <Flex gap={1}>
                     {[1, 2, 3, 4, 5].map((star) => (
                         <Button
@@ -81,13 +94,7 @@ export default function RatingStars({
                             color="mea.gold"
                             minW="auto"
                             px={1}
-                            onClick={() =>
-                                router.post(route('ratings.store'), {
-                                    rateable_type: rateableType,
-                                    rateable_id: rateableId,
-                                    stars: star,
-                                })
-                            }
+                            onClick={() => handleRate(star)}
                             aria-label={`Rate ${star} stars`}
                             _hover={{ color: 'mea.goldBright', bg: 'whiteAlpha.100' }}
                         >
@@ -95,10 +102,6 @@ export default function RatingStars({
                         </Button>
                     ))}
                 </Flex>
-            ) : rateableType ? (
-                <Text fontSize="xs" color="mea.muted">
-                    Sign in and verify email to rate
-                </Text>
             ) : null}
         </Flex>
     );

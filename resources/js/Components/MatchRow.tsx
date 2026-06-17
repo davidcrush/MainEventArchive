@@ -1,5 +1,4 @@
-import { Box, Button, Flex, Text } from '@chakra-ui/react';
-import PromotionLogo from './PromotionLogo';
+import { Box, Flex, Text } from '@chakra-ui/react';
 import RatingStars from './RatingStars';
 
 export interface Participant {
@@ -78,13 +77,9 @@ function formatDuration(seconds: number): string {
 export default function MatchRow({
     match,
     spoilersEnabled,
-    promotionName,
-    promotionSlug,
 }: {
     match: MatchData;
     spoilersEnabled: boolean;
-    promotionName?: string;
-    promotionSlug?: string;
 }) {
     const resultLine = spoilersEnabled ? formatResult(match) : null;
     const participantLine = match.participant_line ?? formatParticipants(match.participants ?? []);
@@ -94,73 +89,52 @@ export default function MatchRow({
             as="li"
             bg="mea.surfaceAlt"
             borderWidth="1px"
-            borderColor={spoilersEnabled ? 'mea.red' : 'mea.border'}
+            borderColor="mea.border"
             borderRadius="md"
             p={4}
         >
             <Flex justify="space-between" align="start" gap={4} flexWrap="wrap">
-                <Flex gap={3} flex={1} minW={0}>
-                    {spoilersEnabled ? (
-                        <PromotionLogo
-                            promotionSlug={promotionSlug}
-                            promotionName={promotionName}
-                            size="sm"
-                        />
+                <Box flex={1} minW={0}>
+                    {match.title_name ? (
+                        <Text fontSize="xs" color="mea.gold" mb={1} fontWeight="semibold" textTransform="uppercase">
+                            {match.title_name}
+                        </Text>
                     ) : null}
-                    <Box flex={1} minW={0}>
-                        {match.title_name ? (
-                            <Text fontSize="xs" color="mea.gold" mb={1} fontWeight="semibold" textTransform="uppercase">
-                                {match.title_name}
-                            </Text>
-                        ) : null}
 
+                    <Box minH="2.5rem" mb={1}>
                         {spoilersEnabled && resultLine ? (
-                            <Text fontWeight="semibold" mb={1}>
+                            <Text fontWeight="semibold">
                                 {resultLine}
                             </Text>
                         ) : (
-                            <Text fontWeight="medium" mb={1}>
+                            <Text fontWeight="medium">
                                 {participantLine}
                             </Text>
                         )}
+                    </Box>
 
-                        <Text fontSize="sm" color="mea.muted">
-                            {match.match_type.replace(/_/g, ' ')}
-                        </Text>
+                    <Text fontSize="sm" color="mea.muted">
+                        {match.match_type.replace(/_/g, ' ')}
+                    </Text>
 
+                    <Box minH="1.25rem" mt={1}>
                         {spoilersEnabled && match.duration_seconds ? (
-                            <Text fontSize="sm" color="mea.muted" mt={1}>
+                            <Text fontSize="sm" color="mea.muted">
                                 ({formatDuration(match.duration_seconds)})
                             </Text>
                         ) : null}
                     </Box>
-                </Flex>
+                </Box>
 
-                <Flex direction="column" align="flex-end" gap={2}>
-                    {spoilersEnabled ? (
-                        <Button
-                            size="xs"
-                            variant="outline"
-                            borderColor="mea.border"
-                            color="mea.muted"
-                            disabled
-                            cursor="not-allowed"
-                            opacity={0.6}
-                        >
-                            Jump to match
-                        </Button>
-                    ) : null}
-
-                    {match.is_rateable ? (
+                {match.is_rateable ? (
+                    <Flex direction="column" align="flex-end" gap={2}>
                         <RatingStars
                             rateableType="match"
                             rateableId={match.id}
-                            average={match.rating_average}
-                            count={match.rating_count}
-                            label={spoilersEnabled ? 'Rate Match' : undefined}
+                            label="Rate Match"
                         />
-                    ) : null}
-                </Flex>
+                    </Flex>
+                ) : null}
             </Flex>
         </Box>
     );

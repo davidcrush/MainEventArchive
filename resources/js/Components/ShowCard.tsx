@@ -211,11 +211,7 @@ export default function ShowCard({
                                     Video
                                 </Badge>
                             ) : null}
-                            <RatingStars
-                                average={show.rating_average}
-                                count={show.rating_count}
-                                compact
-                            />
+                            <RatingStars rateableType="show" rateableId={show.id} compact />
                         </Flex>
                     </Box>
                 </Flex>

@@ -8,7 +8,7 @@ import FandomSourceBadge from '@/Components/FandomSourceBadge';
 import WikidataSourceBadge from '@/Components/WikidataSourceBadge';
 import WikipediaSourceBadge, { isWikipediaSourceUrl } from '@/Components/WikipediaSourceBadge';
 import { Link, router } from '@inertiajs/react';
-import { Badge, Box, Button, Flex, Heading, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Text } from '@chakra-ui/react';
 import { Head } from '@inertiajs/react';
 
 interface LinkedVenue {
@@ -102,40 +102,13 @@ export default function ShowPage({
                 as="article"
                 bg="mea.surface"
                 borderWidth="1px"
-                borderColor={spoilersEnabled ? 'mea.red' : 'mea.border'}
+                borderColor="mea.border"
                 borderRadius="xl"
                 overflow="hidden"
             >
-                {spoilersEnabled ? (
-                    <Box bg="mea.red" py={2} px={6} textAlign="center">
-                        <Text fontWeight="bold" fontSize="sm" textTransform="uppercase" letterSpacing="wider">
-                            Spoilers Enabled
-                        </Text>
-                    </Box>
-                ) : null}
-
                 <Box p={{ base: 6, md: 8 }}>
                     <Flex justify="space-between" align="start" mb={6} flexWrap="wrap" gap={4}>
                         <Box>
-                            {!spoilersEnabled ? (
-                                <Badge
-                                    bgGradient="to-r"
-                                    gradientFrom="mea.gold"
-                                    gradientTo="mea.goldBright"
-                                    color="mea.bg"
-                                    mb={3}
-                                    px={4}
-                                    py={1.5}
-                                    borderRadius="full"
-                                    fontSize="xs"
-                                    fontWeight="bold"
-                                    textTransform="uppercase"
-                                    letterSpacing="wider"
-                                    boxShadow="goldGlow"
-                                >
-                                    Spoilers OFF
-                                </Badge>
-                            ) : null}
                             <Heading as="h1" size="2xl" mb={2} fontWeight="bold">
                                 {show.title}
                             </Heading>
@@ -162,8 +135,6 @@ export default function ShowPage({
                                         key={match.id}
                                         match={match}
                                         spoilersEnabled={spoilersEnabled}
-                                        promotionName={show.promotion?.name}
-                                        promotionSlug={show.promotion?.slug}
                                     />
                                 ))}
                             </Box>
@@ -229,8 +200,6 @@ export default function ShowPage({
                         <RatingStars
                             rateableType="show"
                             rateableId={show.id}
-                            average={show.rating_average}
-                            count={show.rating_count}
                             label="Rate Show"
                         />
                     </Box>

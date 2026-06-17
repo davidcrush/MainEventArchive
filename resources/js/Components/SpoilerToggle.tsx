@@ -42,8 +42,8 @@ export default function SpoilerToggle({
             </Switch.Root>
             {enabled ? (
                 <Badge
-                    bg="mea.red"
-                    color="white"
+                    bg="mea.gold"
+                    color="mea.bg"
                     px={3}
                     py={1}
                     borderRadius="md"
@@ -56,14 +56,15 @@ export default function SpoilerToggle({
             ) : (
                 <Badge
                     bg="transparent"
-                    color="mea.gold"
+                    color="mea.muted"
                     borderWidth="1px"
-                    borderColor="mea.gold"
+                    borderColor="mea.border"
                     px={3}
                     py={1}
                     borderRadius="md"
                     fontSize="xs"
                     fontWeight="bold"
+                    textTransform="uppercase"
                 >
                     Spoilers OFF
                 </Badge>

@@ -35,9 +35,9 @@ class ShowController extends Controller
             ->withCount('ratings')
             ->firstOrFail();
 
-        if ($request->user()) {
-            $show->on_watchlist = $request->user()->watchlistItems()->where('show_id', $show->id)->exists();
-            $show->is_watched = $request->user()->watchedShows()->where('show_id', $show->id)->exists();
+        if ($user = $request->user()) {
+            $show->on_watchlist = $user->watchlistItems()->where('show_id', $show->id)->exists();
+            $show->is_watched = $user->watchedShows()->where('show_id', $show->id)->exists();
         }
 
         return Inertia::render('Shows/Show', [
