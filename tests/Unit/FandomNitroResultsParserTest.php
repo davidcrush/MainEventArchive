@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Data\ParsedWikipediaMatch;
-use App\Exceptions\WikipediaMatchCountMismatchException;
 use App\Services\Fandom\FandomNitroResultsParser;
 use Tests\TestCase;
 
@@ -123,7 +122,7 @@ WIKI;
         $this->assertSame(600, $match->durationSeconds);
     }
 
-    public function test_count_mismatch_throws_when_a_bullet_cannot_be_parsed(): void
+    public function test_unparseable_bullets_are_ignored_without_count_mismatch(): void
     {
         $wikitext = <<<'WIKI'
 ==Results==
@@ -131,13 +130,131 @@ WIKI;
 *[[Some Backstage Segment]] happened with no result
 WIKI;
 
-        $this->expectException(WikipediaMatchCountMismatchException::class);
+        $matches = $this->parser->parse($wikitext);
 
-        $this->parser->parse($wikitext);
+        $this->assertCount(1, $matches);
+    }
+
+    public function test_count_declared_matches_counts_only_parseable_result_bullets(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+*'''Dark Match:''' ??? vs. [[Chavo Guerrero Jr.]]
+*[[The Giant]] defeated [[Johnny B. Badd]]
+*'''WCW United States Heavyweight Title Match:''' [[Dean Malenko]] (c) vs. [[Yuji Nagata]]
+WIKI;
+
+        $this->assertSame(1, $this->parser->countDeclaredMatches($wikitext));
     }
 
     public function test_count_declared_matches_counts_result_bullets(): void
     {
         $this->assertSame(5, $this->parser->countDeclaredMatches($this->sampleWikitext()));
+    }
+
+    public function test_parses_multi_line_winner_format_card(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+*'''Singles Match:'''
+:[[Disqo]] (w/[[Mike Sanders]]) vs. [[Jason Jett]]
+:*'''Winner:''' Jason Jett (4:58).
+*'''[[WCW World Cruiserweight Championship]] Match:'''
+:[[Shane Helms]] (c) vs. [[Billy Kidman]]
+:*'''Winner:''' Shane Helms (3:41).
+*'''Singles Match:'''
+:[[Konnan]] vs. [[Rick Steiner]]
+:*'''Winner:''' Rick Steiner via DQ (5:06).
+*'''Tag Team Match:'''
+:[[Chuck Palumbo]] & [[Sean O'Haire]] vs. [[Lance Storm]] & [[Mike Awesome]]
+:*'''Winner:''' Lance Storm & Mike Awesome (7:54).
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(4, $matches);
+        $this->assertSame(['Jason Jett'], $this->winnerNames($matches[0]));
+        $this->assertSame(298, $matches[0]->durationSeconds);
+        $this->assertSame('WCW World Cruiserweight Championship', $matches[1]->titleName);
+        $this->assertSame('Shane Helms', $matches[1]->participants[0]['name']);
+        $this->assertSame('disqualification', $matches[2]->finish);
+        $this->assertSame('tag', $matches[3]->matchType);
+        $this->assertSame(['Lance Storm & Mike Awesome'], $this->winnerNames($matches[3]));
+    }
+
+    public function test_parses_inline_bold_match_type_headers_and_dash_draw_results(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+*'''Singles Match:''' [[Brian Adams]] vs. [[Buff Bagwell]] - Time Limit Draw (5:44)
+*'''Non Title Match:''' [[Dustin Rhodes]] vs. [[Rick Steiner]] - No Contest (1:00)
+*'''WCW World Heavyweight Title Match:''' [[Scott Steiner]] (w/ [[Midajah]]) (c) defeated [[Kevin Nash]] (w/ [[David Flair]]) by DQ (5:16)
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(3, $matches);
+        $this->assertNull($matches[0]->winnerSide);
+        $this->assertSame('time_limit_draw', $matches[0]->finish);
+        $this->assertSame('no_contest', $matches[1]->finish);
+        $this->assertSame('WCW World Heavyweight Title', $matches[2]->titleName);
+        $this->assertSame('disqualification', $matches[2]->finish);
+    }
+
+    public function test_skips_incomplete_bullets_without_results(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+*'''Dark Match:''' ??? vs. [[Chavo Guerrero Jr.]]
+*'''WCW United States Heavyweight Title Match:''' [[Dean Malenko]] (c) vs. [[Yuji Nagata]]
+*'''Singles Match:''' [[Goldberg]] defeated [[Buff Bagwell]] by DQ (0:29)
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(1, $matches);
+        $this->assertSame(['Goldberg'], $this->winnerNames($matches[0]));
+    }
+
+    public function test_parses_fought_to_no_contest_and_champion_role_links(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+* [[WCW Hardcore Championship|WCW Hardcore Champion]] [[Big Vito]] defeated [[Terry Funk]] in a [[Hardcore Match]]
+*[[Jeff Jarrett]] fought [[Hulk Hogan]] to a no contest
+*[[Goldberg]] defeated [[Barry Windham]] (w/ [[The West Texas Rednecks]]) at around the 30-second mark with the Jackhammer
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(3, $matches);
+        $this->assertSame(['Big Vito'], $this->winnerNames($matches[0]));
+        $this->assertSame('no_contest', $matches[1]->finish);
+        $this->assertSame(['Goldberg'], $this->winnerNames($matches[2]));
+    }
+
+    public function test_parses_singular_result_section_header(): void
+    {
+        $wikitext = <<<'WIKI'
+==Result==
+*'''Dark Match''': [[Rob Kellum]] defeated [[Chris Adams]]
+*'''Singles Match:''' [[Van Hammer]] defeated [[Kenny Kaos]] (2:30)
+WIKI;
+
+        $matches = $this->parser->parse($wikitext);
+
+        $this->assertCount(2, $matches);
+    }
+
+    public function test_returns_empty_card_when_event_had_no_matches(): void
+    {
+        $wikitext = <<<'WIKI'
+==Results==
+;{{small|Numbers in parentheses indicate the length of the match.}}
+No Matches took place at this event.
+WIKI;
+
+        $this->assertSame(0, $this->parser->countDeclaredMatches($wikitext));
+        $this->assertSame([], $this->parser->parse($wikitext));
     }
 }

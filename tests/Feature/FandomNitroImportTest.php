@@ -141,7 +141,7 @@ WIKI);
         $this->assertSame('Winston-Salem, North Carolina', $show->city);
     }
 
-    public function test_import_skips_show_when_match_count_does_not_match(): void
+    public function test_import_ignores_unparseable_bullets_and_persists_valid_matches(): void
     {
         $promotion = Promotion::factory()->wcw()->create();
         $show = Show::factory()->nitroEpisode(37)->create([
@@ -159,8 +159,8 @@ WIKI);
 
         $show->refresh();
 
-        $this->assertSame(0, $show->matches()->count(), 'Partial cards are never persisted.');
-        $this->assertNotSame('fandom', $show->source);
+        $this->assertSame(1, $show->matches()->count());
+        $this->assertSame('fandom', $show->source);
     }
 
     public function test_dry_run_does_not_persist(): void
