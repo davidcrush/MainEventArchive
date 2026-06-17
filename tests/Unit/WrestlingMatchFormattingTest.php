@@ -4,10 +4,13 @@ namespace Tests\Unit;
 
 use App\Models\MatchParticipant;
 use App\Models\WrestlingMatch;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class WrestlingMatchFormattingTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_participant_line_formats_sides(): void
     {
         $match = WrestlingMatch::factory()->create();
