@@ -80,8 +80,6 @@ class WrestlingMatch extends Model
         if ($this->match_type !== 'battle_royal') {
             return $this->participantLine();
         }
-
-        /** @var list<string> $entrantNames */
         $entrantNames = $this->entrant_names ?? [];
         $resultNames = $this->participants->pluck('name')->values()->all();
         $resultKeys = collect($resultNames)
@@ -183,6 +181,38 @@ class WrestlingMatch extends Model
 
         return collect($sides)
             ->map(fn (array $names): string => implode(' & ', array_fill(0, count($names), '???')))
+            ->implode(' vs ');
+    }
+
+    public function spoilerSafePreviewLine(): string
+    {
+        if ($this->shouldMaskTournamentParticipants()) {
+            return $this->spoilerSafeTournamentParticipantLine();
+        }
+
+        if ($this->match_type === 'battle_royal') {
+            return $this->spoilerSafeParticipantLine();
+        }
+
+        $this->loadMissing('participants');
+
+        if ($this->participants->isEmpty()) {
+            return '—';
+        }
+
+        $sides = [];
+
+        foreach ($this->participants->sortBy(['side', 'sort_order']) as $participant) {
+            $name = $participant->is_surprise_entrant
+                ? ($participant->placeholder_label ?? 'TBA')
+                : $participant->name;
+            $sides[$participant->side][] = $name;
+        }
+
+        ksort($sides);
+
+        return collect($sides)
+            ->map(fn (array $names): string => implode(' & ', $names))
             ->implode(' vs ');
     }
 

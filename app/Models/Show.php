@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
@@ -64,6 +65,14 @@ class Show extends Model
         return $this->matches()->where('is_ppv', true);
     }
 
+    public function mainEventMatch(): HasOne
+    {
+        return $this->hasOne(WrestlingMatch::class)
+            ->where('is_ppv', true)
+            ->where('is_surprise', false)
+            ->orderByDesc('card_order');
+    }
+
     public function videos(): HasMany
     {
         return $this->hasMany(Video::class);
@@ -107,7 +116,9 @@ class Show extends Model
         return $query
             ->withAvg('ratings', 'stars')
             ->withCount('ratings')
-            ->withExists(['videos as has_video' => fn ($q) => $q->whereNull('match_id')]);
+            ->withCount(['matches as card_match_count' => fn ($q) => $q->where('is_ppv', true)])
+            ->withExists(['videos as has_video' => fn ($q) => $q->whereNull('match_id')])
+            ->with(['mainEventMatch' => fn ($q) => $q->with('participants')]);
     }
 
     /**

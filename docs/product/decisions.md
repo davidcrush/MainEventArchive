@@ -88,11 +88,12 @@ This document records product and technical decisions for Main Event Archive (ME
 
 - One canonical `Show` with multiple `Video` / `VideoSource` records ranked by staff (primary + fallbacks)
 
-### Show card clickability & "missing card" indicator (deferred to its own change)
+### Show card clickability & card availability indicator
 
 - **Clickable rule (lenient):** A show is clickable to its detail page when it has **any** displayable detail — matches, video, **or** metadata (venue / city / rating / episode number). We do not block click-through just because a card is missing.
-- **Missing-card indicator (separate, future change):** Show a card-level badge when match data is missing, mirroring the existing `Video` badge in [`ShowCard.tsx`](../../resources/js/Components/ShowCard.tsx), so users know before clicking in. Same pattern intended for missing video.
-- **Status:** Decisions recorded now; implementation is a follow-up change (not included with the Fandom Nitro import work).
+- **Card availability badge:** Browse/search cards show `Card` when match data exists and `No card` when it does not, mirroring the existing `Video` badge pattern in [`ShowCard.tsx`](../../resources/js/Components/ShowCard.tsx).
+- **Card preview:** When a card exists, show the main event on the browse card. Spoiler-safe participant lines only.
+- **Missing video indicator:** Still deferred — only positive `Video` badge today.
 
 ## Still TBD before specific features ship
 

@@ -2,7 +2,7 @@ import ShowCard, { ShowCardData } from '@/Components/ShowCard';
 import { Box, Flex, Heading, IconButton } from '@chakra-ui/react';
 import { useRef } from 'react';
 
-const CARD_WIDTH = 280;
+const CARD_WIDTH = 380;
 const CARD_GAP = 20;
 
 export default function FeaturedCarousel({ shows }: { shows: ShowCardData[] }) {

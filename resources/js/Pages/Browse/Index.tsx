@@ -146,7 +146,7 @@ export default function BrowseIndex({
                 <Text color="mea.muted">No published shows match these filters yet.</Text>
             ) : (
                 <>
-                    <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={5}>
+                    <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
                         {shows.data.map((show) => (
                             <ShowCard key={show.id} show={show} />
                         ))}

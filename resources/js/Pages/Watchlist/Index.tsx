@@ -29,7 +29,7 @@ export default function WatchlistIndex({ shows }: { shows: ShowCardData[] }) {
                     </Text>
                 </Box>
             ) : (
-                <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={5}>
+                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
                     {shows.map((show) => (
                         <ShowCard key={show.id} show={show} />
                     ))}

@@ -24,6 +24,32 @@ class ShowCardResource extends JsonResource
             'rating_average' => $this->when(isset($this->ratings_avg_stars), round((float) $this->ratings_avg_stars, 1)),
             'rating_count' => $this->when(isset($this->ratings_count), (int) $this->ratings_count),
             'has_video' => (bool) ($this->has_video ?? false),
+            'has_card' => (int) ($this->card_match_count ?? 0) > 0,
+            'main_event_preview' => $this->when(
+                (int) ($this->card_match_count ?? 0) > 0,
+                fn () => $this->buildMainEventPreview(),
+            ),
+        ];
+    }
+
+    /**
+     * @return array{line: string, title_name: string|null}|null
+     */
+    private function buildMainEventPreview(): ?array
+    {
+        if (! $this->relationLoaded('mainEventMatch')) {
+            return null;
+        }
+
+        $match = $this->mainEventMatch;
+
+        if ($match === null) {
+            return null;
+        }
+
+        return [
+            'line' => $match->spoilerSafePreviewLine(),
+            'title_name' => $match->title_name,
         ];
     }
 }

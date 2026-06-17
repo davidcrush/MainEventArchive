@@ -97,7 +97,7 @@ export default function VenueShowPage({
                             No published shows are linked to this venue yet.
                         </Text>
                     ) : (
-                        <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={5}>
+                        <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
                             {shows.map((show) => (
                                 <ShowCard key={show.id} show={show} />
                             ))}
