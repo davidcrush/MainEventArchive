@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Show;
+use App\Models\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,8 @@ class ShowCardResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'date' => $this->date->toDateString(),
+            'venue' => $this->resolveVenueForResponse(),
+            'city' => $this->city,
             'show_type' => $this->show_type->value,
             'promotion' => $this->whenLoaded('promotion', fn () => [
                 'name' => $this->promotion->name,
@@ -51,5 +54,24 @@ class ShowCardResource extends JsonResource
             'line' => $match->spoilerSafePreviewLine(),
             'title_name' => $match->title_name,
         ];
+    }
+
+    /**
+     * @return array{name: string, slug: string}|string|null
+     */
+    private function resolveVenueForResponse(): array|string|null
+    {
+        if ($this->relationLoaded('venue')) {
+            $linkedVenue = $this->resource->getRelation('venue');
+
+            if ($linkedVenue instanceof Venue) {
+                return [
+                    'name' => $linkedVenue->name,
+                    'slug' => $linkedVenue->slug,
+                ];
+            }
+        }
+
+        return $this->resource->getAttributes()['venue'] ?? null;
     }
 }

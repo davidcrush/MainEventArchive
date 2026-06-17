@@ -118,7 +118,10 @@ class Show extends Model
             ->withCount('ratings')
             ->withCount(['matches as card_match_count' => fn ($q) => $q->where('is_ppv', true)])
             ->withExists(['videos as has_video' => fn ($q) => $q->whereNull('match_id')])
-            ->with(['mainEventMatch' => fn ($q) => $q->with('participants')]);
+            ->with([
+                'venue',
+                'mainEventMatch' => fn ($q) => $q->with('participants'),
+            ]);
     }
 
     /**

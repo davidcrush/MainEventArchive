@@ -3,6 +3,11 @@ import { Badge, Box, Flex, Heading, Text } from '@chakra-ui/react';
 import PromotionLogo from './PromotionLogo';
 import RatingStars from './RatingStars';
 
+export interface LinkedVenue {
+    name: string;
+    slug: string;
+}
+
 export interface MainEventPreview {
     line: string;
     title_name?: string | null;
@@ -13,6 +18,8 @@ export interface ShowCardData {
     title: string;
     slug: string;
     date: string;
+    venue?: string | LinkedVenue | null;
+    city?: string | null;
     show_type: string;
     promotion?: { name: string; slug: string };
     rating_average?: number;
@@ -28,6 +35,25 @@ function formatDate(date: string): string {
         day: 'numeric',
         year: 'numeric',
     });
+}
+
+function formatLocationLine(
+    venue?: string | LinkedVenue | null,
+    city?: string | null,
+): string | null {
+    const venueName =
+        typeof venue === 'object' && venue !== null
+            ? venue.name
+            : typeof venue === 'string' && venue !== ''
+              ? venue
+              : null;
+    const cityName = city && city !== '' ? city : null;
+
+    if (venueName && cityName) {
+        return `${venueName} • ${cityName}`;
+    }
+
+    return venueName ?? cityName;
 }
 
 function formatMainEventLine(preview: MainEventPreview): string {
@@ -107,6 +133,7 @@ export default function ShowCard({
     const thumbnailSize = isCarousel ? 'lg' : 'md';
     const hasCard = show.has_card ?? false;
     const mainEventPreview = show.main_event_preview;
+    const locationLine = formatLocationLine(show.venue, show.city);
 
     return (
         <Link href={route('shows.show', show.slug)}>
@@ -134,9 +161,14 @@ export default function ShowCard({
                         <Heading size={isCarousel ? 'sm' : 'md'} mb={1} lineClamp={2}>
                             {show.title}
                         </Heading>
-                        <Text color="mea.muted" fontSize="sm" mb={3}>
+                        <Text color="mea.muted" fontSize="sm" mb={locationLine ? 1 : 3}>
                             {formatDate(show.date)}
                         </Text>
+                        {locationLine ? (
+                            <Text color="mea.muted" fontSize="sm" mb={3} lineClamp={2}>
+                                {locationLine}
+                            </Text>
+                        ) : null}
                         <Flex align="center" gap={2} flexWrap="wrap">
                             <Badge
                                 bg="mea.surfaceAlt"

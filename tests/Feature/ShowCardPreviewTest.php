@@ -26,6 +26,45 @@ class ShowCardPreviewTest extends TestCase
         Cache::flush();
     }
 
+    public function test_show_card_resource_includes_venue_and_city(): void
+    {
+        $show = $this->createPublishedShow([
+            'title' => 'Starrcade 1997',
+            'slug' => 'starrcade-1997',
+            'venue' => 'MCI Center',
+            'city' => 'Washington, D.C.',
+        ]);
+
+        $show->load(['promotion', 'venue', 'mainEventMatch.participants']);
+        $show->loadCount(['matches as card_match_count' => fn ($query) => $query->where('is_ppv', true)]);
+
+        $payload = (new ShowCardResource($show))->resolve();
+
+        $this->assertSame('MCI Center', $payload['venue']);
+        $this->assertSame('Washington, D.C.', $payload['city']);
+    }
+
+    public function test_browse_show_cards_expose_venue_and_city(): void
+    {
+        $show = $this->createPublishedShow([
+            'title' => 'Halloween Havoc 1996',
+            'slug' => 'halloween-havoc-1996',
+            'venue' => 'Joe Louis Arena',
+            'city' => 'Detroit, Michigan',
+        ]);
+
+        $this->get(route('browse'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Browse/Index')
+                ->where('shows.data', fn ($shows) => collect($shows)->contains(
+                    fn ($item) => $item['slug'] === $show->slug
+                        && $item['venue'] === 'Joe Louis Arena'
+                        && $item['city'] === 'Detroit, Michigan',
+                )),
+            );
+    }
+
     public function test_show_card_resource_includes_main_event_preview_only(): void
     {
         $show = $this->createPublishedShow(['title' => 'Starrcade 1997', 'slug' => 'starrcade-1997']);
