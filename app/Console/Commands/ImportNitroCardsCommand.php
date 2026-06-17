@@ -14,6 +14,7 @@ class ImportNitroCardsCommand extends Command
                             {--from= : Only import shows on/after this date (Y-m-d)}
                             {--to= : Only import shows on/before this date (Y-m-d)}
                             {--identifier= : Limit to a single show slug or title}
+                            {--refresh-venues : Overwrite existing venue/city from the Fandom infobox (fixes stale values)}
                             {--dry-run : Resolve and parse without persisting}';
 
     protected $description = 'Import per-episode WCW Monday Nitro match cards from prowrestling.fandom.com (CC BY-SA 3.0)';
@@ -30,6 +31,7 @@ class ImportNitroCardsCommand extends Command
         }
 
         $dryRun = (bool) $this->option('dry-run');
+        $refreshVenues = (bool) $this->option('refresh-venues');
         $from = $this->normalizeDate($this->option('from'), endOfYear: false);
         $to = $this->normalizeDate($this->option('to'), endOfYear: true);
         $identifier = $this->option('identifier') !== null ? (string) $this->option('identifier') : null;
@@ -37,7 +39,7 @@ class ImportNitroCardsCommand extends Command
         $this->info(($dryRun ? '[dry run] ' : '')."Importing Nitro match cards from Fandom for {$promotion->name}...");
 
         try {
-            $result = $importer->import($promotion, $from, $to, $identifier, $dryRun);
+            $result = $importer->import($promotion, $from, $to, $identifier, $dryRun, $refreshVenues);
         } catch (RuntimeException $exception) {
             $this->error($exception->getMessage());
 

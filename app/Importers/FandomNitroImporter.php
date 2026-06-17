@@ -42,6 +42,7 @@ class FandomNitroImporter
         ?string $toDate = null,
         ?string $identifier = null,
         bool $dryRun = false,
+        bool $refreshVenues = false,
     ): array {
         $shows = $this->resolveShows($promotion, $fromDate, $toDate, $identifier);
 
@@ -67,11 +68,11 @@ class FandomNitroImporter
 
                     $infobox = $this->infoboxParser->parse($page->wikitext);
 
-                    if (($show->venue === null || $show->venue === '') && $infobox['venue'] !== null) {
+                    if ($infobox['venue'] !== null && ($refreshVenues || $show->venue === null || $show->venue === '')) {
                         $updates['venue'] = $infobox['venue'];
                     }
 
-                    if (($show->city === null || $show->city === '') && $infobox['city'] !== null) {
+                    if ($infobox['city'] !== null && ($refreshVenues || $show->city === null || $show->city === '')) {
                         $updates['city'] = $infobox['city'];
                     }
 

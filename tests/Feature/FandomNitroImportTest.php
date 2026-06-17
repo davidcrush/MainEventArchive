@@ -87,6 +87,60 @@ WIKI);
         $this->assertSame(['Randy Savage'], $winnerNames);
     }
 
+    public function test_import_preserves_existing_venue_by_default(): void
+    {
+        $promotion = Promotion::factory()->wcw()->create();
+        $show = Show::factory()->nitroEpisode(37)->create([
+            'promotion_id' => $promotion->id,
+            'venue' => 'Existing Arena',
+            'city' => 'Panama City Beach, Florida',
+        ]);
+
+        $this->fakeResultsPage(<<<'WIKI'
+{{Infobox Wrestling episode
+| venue = [[Lawrence Joel Veterans Memorial Coliseum]]
+| city = [[Winston-Salem, North Carolina]]
+}}
+==Results==
+*[[The Giant]] defeated [[Johnny B. Badd]]
+WIKI);
+
+        $this->artisan('shows:import-nitro-cards', ['--promotion' => 'wcw'])
+            ->assertExitCode(0);
+
+        $show->refresh();
+
+        $this->assertSame('Existing Arena', $show->venue);
+        $this->assertSame('Panama City Beach, Florida', $show->city);
+    }
+
+    public function test_refresh_venues_overwrites_stale_venue_and_city(): void
+    {
+        $promotion = Promotion::factory()->wcw()->create();
+        $show = Show::factory()->nitroEpisode(37)->create([
+            'promotion_id' => $promotion->id,
+            'venue' => 'Stale Arena',
+            'city' => 'Panama City Beach, Florida',
+        ]);
+
+        $this->fakeResultsPage(<<<'WIKI'
+{{Infobox Wrestling episode
+| venue = [[Lawrence Joel Veterans Memorial Coliseum]]
+| city = [[Winston-Salem, North Carolina]]
+}}
+==Results==
+*[[The Giant]] defeated [[Johnny B. Badd]]
+WIKI);
+
+        $this->artisan('shows:import-nitro-cards', ['--promotion' => 'wcw', '--refresh-venues' => true])
+            ->assertExitCode(0);
+
+        $show->refresh();
+
+        $this->assertSame('Lawrence Joel Veterans Memorial Coliseum', $show->venue);
+        $this->assertSame('Winston-Salem, North Carolina', $show->city);
+    }
+
     public function test_import_skips_show_when_match_count_does_not_match(): void
     {
         $promotion = Promotion::factory()->wcw()->create();
