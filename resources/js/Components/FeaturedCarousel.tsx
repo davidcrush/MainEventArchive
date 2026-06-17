@@ -23,11 +23,11 @@ export default function FeaturedCarousel({ shows }: { shows: ShowCardData[] }) {
             <Flex maxW="7xl" mx="auto" direction="column" gap={6}>
                 <Flex align="center" justify="space-between" gap={4}>
                     <Heading size="xl" fontWeight="bold">
-                        Featured WCW PPVs
+                        Latest Shows
                     </Heading>
                     <Flex gap={2} flexShrink={0}>
                         <IconButton
-                            aria-label="Previous featured shows"
+                            aria-label="Previous latest shows"
                             variant="outline"
                             borderColor="mea.border"
                             color="white"
@@ -39,7 +39,7 @@ export default function FeaturedCarousel({ shows }: { shows: ShowCardData[] }) {
                             ‹
                         </IconButton>
                         <IconButton
-                            aria-label="Next featured shows"
+                            aria-label="Next latest shows"
                             variant="outline"
                             borderColor="mea.border"
                             color="white"
