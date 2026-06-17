@@ -40,9 +40,16 @@ trait PersistsParsedMatches
                 ]);
 
                 foreach ($parsedMatch->participants as $participant) {
+                    $name = preg_replace('/\{\{efn[^}]*\}\}/', '', $participant['name']) ?? $participant['name'];
+                    $name = trim($name);
+
+                    if (strlen($name) > 255) {
+                        $name = substr($name, 0, 252).'...';
+                    }
+
                     MatchParticipant::query()->create([
                         'match_id' => $match->id,
-                        'name' => $participant['name'],
+                        'name' => $name,
                         'side' => $participant['side'],
                         'sort_order' => $participant['sort_order'],
                     ]);

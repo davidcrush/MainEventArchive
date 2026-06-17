@@ -28,6 +28,8 @@ class WwePpvCatalogImporter
         'docs/third-party/cagematch/WWE-PPVs-1996-1985.mhtml',
         'docs/third-party/cagematch/WWE-PPVs-2003-1996.html',
         'docs/third-party/cagematch/WWE-PPVs-2010-2003.mhtml',
+        'docs/third-party/cagematch/WWE-PPVs-2016-2010.mhtml',
+        'docs/third-party/cagematch/WWE-PPVs-2021-2016.mhtml',
     ];
 
     public function __construct(

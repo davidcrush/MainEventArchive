@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Shows\Pages;
 
 use App\Enums\ShowStatus;
-use App\Enums\ShowType;
 use App\Filament\Resources\Shows\Actions\PublishAllShowsAction;
 use App\Filament\Resources\Shows\ShowResource;
 use Filament\Actions\CreateAction;
@@ -28,14 +27,33 @@ class ListShows extends ListRecords
      */
     public function getTabs(): array
     {
-        return [
+        $tabs = [
             'all' => Tab::make('All'),
             'pending_review' => Tab::make('Pending review')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', ShowStatus::PendingReview)),
-            'nitro' => Tab::make('Nitro')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('title', 'like', 'WCW Monday Nitro%')),
-            'tv' => Tab::make('TV')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('show_type', ShowType::Tv)),
+        ];
+
+        foreach (self::promotionTabSlugs() as $slug => $label) {
+            $tabs[$slug] = Tab::make($label)
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas(
+                    'promotion',
+                    fn (Builder $promotionQuery) => $promotionQuery->where('slug', $slug),
+                ));
+        }
+
+        return $tabs;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function promotionTabSlugs(): array
+    {
+        return [
+            'wwe' => 'WWE',
+            'wcw' => 'WCW',
+            'tna' => 'TNA',
+            'aew' => 'AEW',
         ];
     }
 }

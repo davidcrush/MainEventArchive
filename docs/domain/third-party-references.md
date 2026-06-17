@@ -61,8 +61,14 @@ MEA links out to Netflix for full-show viewing; we never embed or host Netflix p
 
 | Mode | When | UX |
 |------|------|-----|
-| **Search fallback** | WWE PPV with no curated Netflix URL | "Watch on Netflix" opens Netflix search for the show title; subtitle: "Search Netflix for this event" |
-| **Deep link** | `videos.provider = netflix` row on the show | "Watch on Netflix" opens `https://www.netflix.com/watch/{titleId}` |
+| **Search fallback** | WWE PPV with no curated Netflix URL, or deep links disabled | "Watch on Netflix" opens Netflix search for the show title; subtitle: "Search Netflix for this event" |
+| **Deep link** | `videos.provider = netflix` row on the show **and** `NETFLIX_DEEP_LINKS_ENABLED=true` | "Watch on Netflix" opens `https://www.netflix.com/watch/{titleId}` |
+
+### Jan 2026 catalog migration (stale deep links)
+
+In January 2026 Netflix became the U.S. home for most WWE PLE/PPV archive content (moved from Peacock). Netflix reorganized many events as **multi-season series** (e.g. one "Royal Rumble" title with a season per year). Pre-migration **title IDs stored in MEA often no longer resolve to the correct year** — `/watch/{id}` may open the latest season (e.g. 2025) instead of the catalog show.
+
+**Default:** `NETFLIX_DEEP_LINKS_ENABLED=false` so show pages use **search fallback** until staff re-import episode-level `video_id` values from saved Netflix series pages (`videos:import-netflix --force`). Set `NETFLIX_DEEP_LINKS_ENABLED=true` only after verifying imports against the post-migration catalog.
 
 ### Allowed
 
@@ -86,7 +92,7 @@ vendor/bin/sail artisan videos:import-netflix --html=storage/app/netflix/wwe-ppv
 - Implying MEA verified a title is available on Netflix when using **search fallback** (best-effort search only)
 - Displaying Netflix availability on browse cards (show page button only for v1.2)
 
-Config: [`config/streaming.php`](../../config/streaming.php) (`NETFLIX_WWE_PPV_SEARCH_ENABLED`, search URL template).
+Config: [`config/streaming.php`](../../config/streaming.php) (`NETFLIX_DEEP_LINKS_ENABLED`, `NETFLIX_WWE_PPV_SEARCH_ENABLED`, search URL template).
 
 ### Brand assets (show page buttons)
 

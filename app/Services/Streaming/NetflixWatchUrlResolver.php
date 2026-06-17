@@ -22,6 +22,10 @@ class NetflixWatchUrlResolver
 
     private function resolveDeepLink(Show $show): ?WatchTarget
     {
+        if (! config('streaming.netflix.deep_links_enabled', false)) {
+            return null;
+        }
+
         $show->loadMissing('videos');
 
         $video = $show->videos

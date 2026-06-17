@@ -149,7 +149,7 @@ class WikipediaPageTitleResolver
         $titles = [$title];
 
         $normalized = preg_replace_callback(
-            '/\b(Of|The|At|And|Vs)\b/',
+            '/\b(Of|The|At|And|Vs|In)\b/',
             static fn (array $matches): string => strtolower($matches[1]),
             $title,
         );

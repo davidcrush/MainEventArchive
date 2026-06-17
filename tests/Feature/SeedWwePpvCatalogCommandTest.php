@@ -13,6 +13,29 @@ class SeedWwePpvCatalogCommandTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_command_creates_one_hundred_eighty_two_wwe_ppvs_from_2011_to_2020(): void
+    {
+        $this->artisan('shows:seed-wwe-ppv-catalog', ['--from' => '2011', '--to' => '2020'])
+            ->assertExitCode(0);
+
+        $promotion = Promotion::query()->where('slug', 'wwe')->first();
+
+        $this->assertNotNull($promotion);
+
+        $shows = Show::query()
+            ->where('promotion_id', $promotion->id)
+            ->where('show_type', ShowType::Ppv)
+            ->whereBetween('date', ['2011-01-01', '2020-12-31'])
+            ->orderBy('date')
+            ->get();
+
+        $this->assertCount(182, $shows);
+        $this->assertTrue($shows->every(fn (Show $show) => $show->status === ShowStatus::PendingReview));
+        $this->assertSame('Royal Rumble 2011', $shows->first()->title);
+        $this->assertSame('2011-01-30', $shows->first()->date->toDateString());
+        $this->assertSame('TLC: Tables, Ladders & Chairs 2020', $shows->last()->title);
+    }
+
     public function test_command_creates_one_hundred_twenty_wwe_ppvs_from_2002_to_2010(): void
     {
         $this->artisan('shows:seed-wwe-ppv-catalog', ['--from' => '2002', '--to' => '2010'])
@@ -29,11 +52,11 @@ class SeedWwePpvCatalogCommandTest extends TestCase
             ->orderBy('date')
             ->get();
 
-        $this->assertCount(120, $shows);
+        $this->assertCount(128, $shows);
         $this->assertTrue($shows->every(fn (Show $show) => $show->status === ShowStatus::PendingReview));
         $this->assertSame('Royal Rumble 2002', $shows->first()->title);
         $this->assertSame('2002-01-20', $shows->first()->date->toDateString());
-        $this->assertSame('Over The Limit 2010', $shows->last()->title);
+        $this->assertSame('TLC: Tables, Ladders & Chairs 2010', $shows->last()->title);
     }
 
     public function test_command_is_idempotent_for_2002_to_2010(): void
@@ -46,7 +69,7 @@ class SeedWwePpvCatalogCommandTest extends TestCase
             ->whereBetween('date', ['2002-01-01', '2010-12-31'])
             ->count();
 
-        $this->assertSame(120, $count);
+        $this->assertSame(128, $count);
     }
 
     public function test_command_dry_run_does_not_write_shows(): void

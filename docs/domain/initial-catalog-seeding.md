@@ -126,13 +126,17 @@ php artisan db:seed --class=WcwNitroCatalogSeeder --force
 
 ### 5. WWE PPV catalog
 
-Built from three bundled Cagematch saves (merged by air date, no duplicates):
+Built from bundled Cagematch saves (merged by air date, no duplicates):
 
 | File | Years |
 |------|-------|
 | `docs/third-party/cagematch/WWE-PPVs-1996-1985.mhtml` | 1985–1996 |
 | `docs/third-party/cagematch/WWE-PPVs-2003-1996.html` | 1996–2003 |
 | `docs/third-party/cagematch/WWE-PPVs-2010-2003.mhtml` | 2003–2010 |
+| `docs/third-party/cagematch/WWE-PPVs-2016-2010.mhtml` | 2010–2016 |
+| `docs/third-party/cagematch/WWE-PPVs-2021-2016.mhtml` | 2016–2021 |
+
+Optional for future 2021+ rollout: `WWE-PPVs-2026-2021.mhtml`.
 
 Creates PPV rows for slug `wwe` (**World Wrestling Entertainment**). Cagematch `WWF` prefixes are stripped from stored titles (e.g. `Royal Rumble 1996`).
 
@@ -141,8 +145,9 @@ Creates PPV rows for slug `wwe` (**World Wrestling Entertainment**). Cagematch `
 ```bash
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1996 --to=2001
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2011 --to=2020
 vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1985 --to=1995
-vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010 --dry-run
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2011 --to=2020 --dry-run
 ```
 
 Legacy seeder (defaults to 1996–2001, same importer):
@@ -235,6 +240,12 @@ vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010
 vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=2002 --to=2010 --workers=4
 vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=2002 --to=2010
 vendor/bin/sail artisan shows:verify-wikipedia --promotion=wwe --from=2002 --to=2010
+
+# Expansion era (2011–2020) — includes NXT TakeOver events on Cagematch listing
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2011 --to=2020
+vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=2011 --to=2020 --workers=4
+vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=2011 --to=2020
+vendor/bin/sail artisan shows:verify-wikipedia --promotion=wwe --from=2011 --to=2020
 ```
 
 Follow-up backfill (1985–1995): same commands with `--from=1985 --to=1995`.

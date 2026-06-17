@@ -38,7 +38,10 @@ class ShowVideoLinkTest extends TestCase
 
     public function test_show_page_includes_youtube_and_netflix_watch_targets_when_both_exist(): void
     {
-        config(['streaming.netflix.wwe_ppv_search_enabled' => true]);
+        config([
+            'streaming.netflix.wwe_ppv_search_enabled' => true,
+            'streaming.netflix.deep_links_enabled' => true,
+        ]);
 
         $promotion = Promotion::factory()->wwe()->create();
         $show = Show::factory()->create([
@@ -78,6 +81,45 @@ class ShowVideoLinkTest extends TestCase
                 ->where('show.watch_targets.1.provider', 'netflix')
                 ->where('show.watch_targets.1.mode', 'deep_link')
                 ->where('show.watch_targets.1.url', 'https://www.netflix.com/watch/81930237'),
+            );
+    }
+
+    public function test_show_page_uses_netflix_search_when_deep_links_disabled(): void
+    {
+        config([
+            'streaming.netflix.wwe_ppv_search_enabled' => true,
+            'streaming.netflix.deep_links_enabled' => false,
+        ]);
+
+        $promotion = Promotion::factory()->wwe()->create();
+        $show = Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'status' => ShowStatus::Published,
+            'title' => 'Vengeance 2001',
+            'slug' => 'vengeance-2001-search-fallback',
+            'date' => '2001-12-09',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        Video::factory()->create([
+            'show_id' => $show->id,
+            'match_id' => null,
+            'provider' => 'netflix',
+            'external_id' => '81930237',
+            'url' => 'https://www.netflix.com/watch/81930237',
+            'is_primary' => true,
+        ]);
+
+        $this->get(route('shows.show', $show->slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Shows/Show')
+                ->where('show.watch_targets.0.provider', 'netflix')
+                ->where('show.watch_targets.0.mode', 'search')
+                ->where(
+                    'show.watch_targets.0.url',
+                    'https://www.netflix.com/search?q=Vengeance%202001',
+                ),
             );
     }
 
