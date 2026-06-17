@@ -351,4 +351,138 @@ class YouTubeShowMatcherTest extends TestCase
             collect($result['links'])->map(fn ($link) => $link->show->title)->all(),
         );
     }
+
+    public function test_match_wwe_nxt_maps_takeover_vengeance_day_to_catalog_title_without_takeover_prefix(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT Vengeance Day 2023',
+            'date' => '2023-02-04',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'abc12345678',
+                'FULL EVENT: NXT TakeOver: Vengeance Day 2023 | Bron Breakker vs. Gunther',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('NXT Vengeance Day 2023', $result['links'][0]->show->title);
+    }
+
+    public function test_match_wwe_nxt_ignores_non_nxt_catalog_shows(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'Royal Rumble 2023',
+            'date' => '2023-01-28',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'abc12345678',
+                'FULL EVENT: Royal Rumble 2023 | 30-Man Royal Rumble Match',
+            ),
+        ]);
+
+        $this->assertCount(0, $result['links']);
+        $this->assertCount(1, $result['unmatchedEntries']);
+    }
+
+    public function test_match_wwe_nxt_maps_stand_and_deliver_title(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT Stand & Deliver 2026',
+            'date' => '2026-04-04',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'abc12345678',
+                'FULL EVENT: NXT Stand & Deliver 2026 | Title matches on the line',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('NXT Stand & Deliver 2026', $result['links'][0]->show->title);
+    }
+
+    public function test_match_wwe_nxt_disambiguates_stand_and_deliver_night_one_and_two(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT TakeOver: Stand & Deliver 2021',
+            'date' => '2021-04-07',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT TakeOver: Stand & Deliver 2021',
+            'date' => '2021-04-08',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $nightOne = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'night-one',
+                'FULL EVENT: NXT TakeOver: Stand & Deliver 2021 – Night 1 | Shirai vs. Gonzalez',
+            ),
+        ]);
+
+        $nightTwo = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'night-two',
+                'FULL EVENT: NXT TakeOver: Stand & Deliver 2021 – Night 2 | Bálor vs. Kross',
+            ),
+        ]);
+
+        $this->assertSame('2021-04-07', $nightOne['links'][0]->show->date->toDateString());
+        $this->assertSame('2021-04-08', $nightTwo['links'][0]->show->date->toDateString());
+    }
+
+    public function test_match_wwe_nxt_maps_great_american_bash_without_the(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT The Great American Bash 2023',
+            'date' => '2023-07-30',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        $matcher = $this->makeMatcher();
+
+        $result = $matcher->matchWweNxt($promotion, [
+            new YouTubePlaylistEntry(
+                'gab-2023',
+                'FULL EVENT: NXT Great American Bash 2023 | Hayes vs. Dragunov',
+            ),
+        ]);
+
+        $this->assertCount(1, $result['links']);
+        $this->assertSame('NXT The Great American Bash 2023', $result['links'][0]->show->title);
+    }
 }

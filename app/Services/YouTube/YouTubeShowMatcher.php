@@ -95,6 +95,80 @@ class YouTubeShowMatcher
     }
 
     /**
+     * Match the official WWE NXT full-events YouTube playlist to NXT-titled PPV shells.
+     *
+     * @param  list<YouTubePlaylistEntry>  $entries
+     * @return array{
+     *     links: list<YouTubeShowVideoLink>,
+     *     ambiguous: list<string>,
+     *     skipped: list<string>,
+     *     unmatchedEntries: list<YouTubePlaylistEntry>
+     * }
+     */
+    public function matchWweNxt(Promotion $promotion, array $entries): array
+    {
+        $shows = Show::query()
+            ->where('promotion_id', $promotion->id)
+            ->where('show_type', ShowType::Ppv)
+            ->where('title', 'like', '%NXT%')
+            ->orderBy('date')
+            ->get();
+
+        $links = [];
+        $ambiguous = [];
+        $skipped = [];
+        $unmatchedEntries = [];
+        $matchedShowIds = [];
+        $matchedVideoIds = [];
+
+        foreach ($entries as $entry) {
+            if (isset($matchedVideoIds[$entry->videoId])) {
+                continue;
+            }
+
+            $parsed = $this->titleParser->parse($entry->title);
+
+            if ($parsed === null) {
+                $skipped[] = "Skipped unparseable title [{$entry->title}] (video {$entry->videoId}).";
+
+                continue;
+            }
+
+            $candidates = $this->findNxtCandidates(
+                $shows,
+                $parsed['eventTitle'],
+                $parsed['year'],
+                $matchedShowIds,
+                $entry->title,
+            );
+
+            if ($candidates->count() === 1) {
+                $show = $candidates->first();
+                $matchedShowIds[$show->id] = true;
+                $matchedVideoIds[$entry->videoId] = true;
+                $links[] = new YouTubeShowVideoLink($show, $entry);
+
+                continue;
+            }
+
+            if ($candidates->count() > 1) {
+                $ambiguous[] = "Ambiguous match for YouTube video [{$entry->title}] ({$entry->videoId}).";
+
+                continue;
+            }
+
+            $unmatchedEntries[] = $entry;
+        }
+
+        return [
+            'links' => $links,
+            'ambiguous' => $ambiguous,
+            'skipped' => $skipped,
+            'unmatchedEntries' => $unmatchedEntries,
+        ];
+    }
+
+    /**
      * @param  list<YouTubePlaylistEntry>  $entries
      * @return array{
      *     links: list<YouTubeShowVideoLink>,
@@ -218,6 +292,109 @@ class YouTubeShowMatcher
 
             return $this->wrestleManiaEditionResolver->matchesEdition($edition, $show->title);
         })->values();
+    }
+
+    /**
+     * @param  array<int, true>  $matchedShowIds
+     * @return Collection<int, Show>
+     */
+    private function findNxtCandidates(
+        Collection $shows,
+        string $eventTitle,
+        ?int $year,
+        array $matchedShowIds,
+        string $youtubeTitle = '',
+    ): Collection {
+        if ($year === null) {
+            return $this->findCandidates($shows, $eventTitle, null, $matchedShowIds);
+        }
+
+        $catalogTitles = $this->nxtCatalogTitleCandidates($eventTitle, $year);
+
+        $candidates = $shows->filter(function (Show $show) use ($catalogTitles, $year, $matchedShowIds): bool {
+            if (isset($matchedShowIds[$show->id])) {
+                return false;
+            }
+
+            if ((int) $show->date->format('Y') !== $year) {
+                return false;
+            }
+
+            foreach ($catalogTitles as $catalogTitle) {
+                if ($this->catalogTitleMatcher->matches($show->title, $catalogTitle)) {
+                    return true;
+                }
+            }
+
+            return false;
+        })->values();
+
+        if ($candidates->count() <= 1) {
+            return $candidates;
+        }
+
+        return $this->resolveNxtStandAndDeliverNight($candidates, $youtubeTitle);
+    }
+
+    /**
+     * @param  Collection<int, Show>  $candidates
+     * @return Collection<int, Show>
+     */
+    private function resolveNxtStandAndDeliverNight(Collection $candidates, string $youtubeTitle): Collection
+    {
+        if (preg_match('/Stand\s*&\s*Deliver.*\bNight\s*1\b/i', $youtubeTitle) === 1) {
+            return $candidates->sortBy('date')->take(1)->values();
+        }
+
+        if (preg_match('/Stand\s*&\s*Deliver.*\bNight\s*2\b/i', $youtubeTitle) === 1) {
+            return $candidates->sortByDesc('date')->take(1)->values();
+        }
+
+        return $candidates;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function nxtCatalogTitleCandidates(string $eventTitle, int $year): array
+    {
+        $date = Carbon::createFromDate($year, 1, 1);
+        $candidates = [];
+
+        $addCandidate = function (string $title) use (&$candidates, $date): void {
+            $candidates[] = $this->titleNormalizer->normalize($title, $date);
+        };
+
+        $addCandidate($eventTitle);
+
+        $title = preg_replace('/^(?:NXT UK\s+)?NXT\s+/i', 'NXT ', trim($eventTitle)) ?? trim($eventTitle);
+
+        if (preg_match('/^NXT TakeOver:\s*(.+)$/i', $title, $matches) === 1) {
+            $addCandidate('NXT '.trim($matches[1]));
+        }
+
+        if (preg_match('/^NXT TakeOver\s+(.+)$/i', $title, $matches) === 1) {
+            $addCandidate('NXT TakeOver: '.trim($matches[1]));
+        }
+
+        if (preg_match('/^NXT (?!TakeOver\b)(.+)$/i', $title, $matches) === 1) {
+            $addCandidate('NXT TakeOver: '.trim($matches[1]));
+        }
+
+        if (preg_match('/^NXT Great American Bash\b/i', $title) === 1) {
+            $addCandidate((string) preg_replace(
+                '/^NXT Great American Bash/i',
+                'NXT The Great American Bash',
+                $title,
+            ));
+        }
+
+        if (preg_match('/^NXT TakeOver:\s*Brooklyn\s+([1-4])$/i', $title, $matches) === 1) {
+            $roman = ['1' => 'I', '2' => 'II', '3' => 'III', '4' => 'IV'][$matches[1]] ?? $matches[1];
+            $addCandidate("NXT TakeOver: Brooklyn {$roman}");
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     /**

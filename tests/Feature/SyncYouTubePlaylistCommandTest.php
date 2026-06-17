@@ -133,4 +133,40 @@ class SyncYouTubePlaylistCommandTest extends TestCase
         $this->assertSame(1, Video::query()->count());
         $this->assertSame('P-0JmpmHf4A', Video::query()->value('external_id'));
     }
+
+    public function test_sync_wwe_nxt_playlist_creates_video_from_api_response(): void
+    {
+        config(['youtube.api_key' => 'test-api-key']);
+
+        $promotion = Promotion::factory()->wwe()->create();
+
+        Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'title' => 'NXT Deadline 2024',
+            'date' => '2024-12-07',
+            'show_type' => ShowType::Ppv,
+        ]);
+
+        Http::fake([
+            'www.googleapis.com/youtube/v3/playlistItems*' => Http::response([
+                'items' => [
+                    [
+                        'snippet' => [
+                            'title' => 'FULL EVENT: NXT Deadline 2024 | Iron Survivor Challenge',
+                            'resourceId' => ['videoId' => 'nxt-deadline-24'],
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $this->artisan('videos:sync-youtube-playlist', [
+            '--promotion' => 'wwe',
+            '--playlist' => 'wwe_nxt',
+            '--source' => 'api',
+        ])->assertSuccessful();
+
+        $this->assertSame(1, Video::query()->count());
+        $this->assertSame('nxt-deadline-24', Video::query()->value('external_id'));
+    }
 }

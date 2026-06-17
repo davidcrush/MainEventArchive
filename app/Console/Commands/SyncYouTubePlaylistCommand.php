@@ -73,9 +73,11 @@ class SyncYouTubePlaylistCommand extends Command
         ));
 
         $showType = in_array($playlistKey, ['wcw_clash', 'wcw_nitro'], true) ? ShowType::Tv : ShowType::Ppv;
-        $result = $playlistKey === 'wcw_nitro'
-            ? $matcher->matchNitro($promotion, $entries)
-            : $matcher->match($promotion, $entries, $showType);
+        $result = match ($playlistKey) {
+            'wcw_nitro' => $matcher->matchNitro($promotion, $entries),
+            'wwe_nxt' => $matcher->matchWweNxt($promotion, $entries),
+            default => $matcher->match($promotion, $entries, $showType),
+        };
 
         $created = 0;
         $updated = 0;

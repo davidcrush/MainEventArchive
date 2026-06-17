@@ -268,6 +268,7 @@ WWE PPV show pages show **Watch on Netflix** (search for the show title) when no
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=wcw_clash --dry-run
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wcw --playlist=wcw_nitro --dry-run
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wwe --playlist=wwe_ppv --dry-run
+vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wwe --playlist=wwe_nxt --dry-run
 vendor/bin/sail artisan videos:import-netflix --html=storage/app/netflix/wwe-ppv.html --promotion=wwe --dry-run
 ```
 
