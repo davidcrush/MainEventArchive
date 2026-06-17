@@ -10,6 +10,7 @@ Start here for product, domain, architecture, and frontend documentation.
 | See v1 scope | [product/mvp-scope.md](product/mvp-scope.md) |
 | Learn domain terms | [product/glossary.md](product/glossary.md) |
 | Understand schema | [domain/data-model.md](domain/data-model.md) |
+| Video linking & rights (planned) | [product/video-linking-policy.md](product/video-linking-policy.md) |
 | Implement spoilers | [domain/spoiler-rules.md](domain/spoiler-rules.md) |
 | Build import pipeline | [domain/data-import.md](domain/data-import.md) |
 | **Initial catalog seeding (local + Forge)** | [domain/initial-catalog-seeding.md](domain/initial-catalog-seeding.md) |

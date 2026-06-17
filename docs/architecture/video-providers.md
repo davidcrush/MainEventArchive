@@ -93,8 +93,11 @@ Priority documented in [data-model.md](../domain/data-model.md).
 
 Vimeo, Dailymotion, archive.org — implement new `VideoProvider` + bind in config. No changes to show/match UI contracts.
 
+archive.org and other secondary hosts are subject to [video linking policy](../product/video-linking-policy.md) (rights reports, link-only removal, provider circuit breaker). Not implemented until after v1.6 YouTube work unless policy pages ship earlier.
+
 ## Related docs
 
+- [Video linking policy](../product/video-linking-policy.md)
 - [ADR 001](decisions/001-youtube-first.md)
 - [AI enrichment](../domain/ai-enrichment.md)
 - [Caching](caching.md) — embeddability cache

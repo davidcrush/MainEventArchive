@@ -18,6 +18,7 @@ Pro wrestling catalog application. **Catalog-first:** v1–v1.5 data only; YouTu
 | [docs/product/vision.md](../../../docs/product/vision.md) | Product principles |
 | [docs/product/mvp-scope.md](../../../docs/product/mvp-scope.md) | v1 scope & roadmap |
 | [docs/product/decisions.md](../../../docs/product/decisions.md) | Defaults & open items |
+| [docs/product/video-linking-policy.md](../../../docs/product/video-linking-policy.md) | Third-party video rights & takedown (planned) |
 | [docs/domain/data-model.md](../../../docs/domain/data-model.md) | Schema source of truth |
 | [docs/domain/spoiler-rules.md](../../../docs/domain/spoiler-rules.md) | Hard vs soft spoilers |
 | [docs/architecture/overview.md](../../../docs/architecture/overview.md) | Adapters & layout |

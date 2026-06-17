@@ -14,6 +14,7 @@ This document records product and technical decisions for Main Event Archive (ME
 | Data seed | Wikidata + Wikipedia API (not scraping proprietary DBs) |
 | Nitro match cards | Sourced from [prowrestling.fandom.com](https://prowrestling.fandom.com) via MediaWiki API (CC BY-SA 3.0); attributed on show pages + Attribution page. TV episodes have no individual Wikipedia results pages, so Fandom fills the gap. Imported via `shows:import-nitro-cards`. |
 | Content maintenance | Staff admin UI only (no public submissions in v1) |
+| Video rights / third-party links | Link-out only; report-and-remove for disputed URLs; same policy for all providers; archive.org secondary and droppable if recurring issues — see [video-linking-policy.md](video-linking-policy.md) (planned, not implemented) |
 
 ## Recommended defaults (implement unless changed)
 
