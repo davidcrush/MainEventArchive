@@ -124,15 +124,34 @@ php artisan db:seed --class=WcwNitroCatalogSeeder --force
 
 (Add `vendor/bin/sail` before `php` when running inside Sail locally.)
 
-### 5. WWE PPV catalog (1996–2001)
+### 5. WWE PPV catalog
 
-Built from bundled Cagematch MHTML save (`docs/third-party/cagematch/WWE-PPVs-2003-1996.html`). Creates **80** PPV rows for slug `wwe` (**World Wrestling Entertainment**). Cagematch `WWF` prefixes are stripped from stored titles (e.g. `Royal Rumble 1996`).
+Built from three bundled Cagematch saves (merged by air date, no duplicates):
+
+| File | Years |
+|------|-------|
+| `docs/third-party/cagematch/WWE-PPVs-1996-1985.mhtml` | 1985–1996 |
+| `docs/third-party/cagematch/WWE-PPVs-2003-1996.html` | 1996–2003 |
+| `docs/third-party/cagematch/WWE-PPVs-2010-2003.mhtml` | 2003–2010 |
+
+Creates PPV rows for slug `wwe` (**World Wrestling Entertainment**). Cagematch `WWF` prefixes are stripped from stored titles (e.g. `Royal Rumble 1996`).
+
+**Canonical command** (scoped year range, dry-run supported):
+
+```bash
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1996 --to=2001
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1985 --to=1995
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010 --dry-run
+```
+
+Legacy seeder (defaults to 1996–2001, same importer):
 
 ```bash
 vendor/bin/sail artisan db:seed --class=WwePpvCatalogSeeder
 ```
 
-**Caution:** Like the WCW PPV seeder, this **deletes** WWE PPV shows dated 1996–2001 that are **not** in the bundled Cagematch list.
+**Caution:** Delete is **scoped to the requested year range** — only WWE PPV shows in `--from`/`--to` that are **not** in the merged Cagematch list are removed. Seeding 2002–2010 does not touch published 1996–2001 rows.
 
 Wikipedia page title overrides (when import fails): `database/seeders/data/wwe_ppv_overrides.php`.
 
@@ -201,15 +220,24 @@ vendor/bin/sail artisan shows:import-venues --from=1993 --to=2001
 
 See [wikipedia-venue-parser.md](wikipedia-venue-parser.md). Multi-venue events stay as comma-joined text on the show only.
 
-### WWE PPVs (1996–2001) — Wikipedia match cards
+### WWE PPVs — Wikipedia match cards
 
 After seeding:
 
 ```bash
-vendor/bin/sail artisan db:seed --class=WwePpvCatalogSeeder
+# Initial era (1996–2001)
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=1996 --to=2001
 vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=1996 --to=2001
 vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=1996 --to=2001
+
+# Expansion era (2002–2010)
+vendor/bin/sail artisan shows:seed-wwe-ppv-catalog --from=2002 --to=2010
+vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=2002 --to=2010 --workers=4
+vendor/bin/sail artisan shows:import-venues --promotion=wwe --from=2002 --to=2010
+vendor/bin/sail artisan shows:verify-wikipedia --promotion=wwe --from=2002 --to=2010
 ```
+
+Follow-up backfill (1985–1995): same commands with `--from=1985 --to=1995`.
 
 Browse at `/browse?promotion=wwe`. Bulk Wikipedia import **requires** `--promotion` so WCW and WWE shows in the same year range are not cross-enriched.
 
@@ -281,7 +309,7 @@ vendor/bin/sail exec pgsql pg_dump -U sail -d laravel \
 | `WcwPpvCatalogSeeder` | PPV | Date (1990–2001) | Yes — PPVs in range not in Cagematch list |
 | `WcwClashCatalogSeeder` | TV | Date (+ promotion) | No |
 | `WcwNitroCatalogSeeder` | TV (Nitro titles) | Date (+ Nitro title prefix) | No |
-| `WwePpvCatalogSeeder` | PPV | Date (+ promotion) | Yes — PPVs in 1996–2001 not in Cagematch list |
+| `WwePpvCatalogSeeder` / `shows:seed-wwe-ppv-catalog` | PPV | Date (+ promotion) | Yes — PPVs in requested `--from`/`--to` range not in merged Cagematch list |
 
 Re-running seeders is safe for Clash, Nitro, and Pre-1990: they update titles/slugs when curated data changes. Existing **published** status is not reset on update — only **new** rows are created as `pending_review`.
 

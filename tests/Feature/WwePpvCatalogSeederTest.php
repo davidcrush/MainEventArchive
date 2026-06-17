@@ -30,10 +30,10 @@ class WwePpvCatalogSeederTest extends TestCase
             ->orderBy('date')
             ->get();
 
-        $this->assertCount(80, $shows);
+        $this->assertCount(81, $shows);
         $this->assertTrue($shows->every(fn (Show $show) => $show->status === ShowStatus::PendingReview));
-        $this->assertSame('In Your House 6: Rage In The Cage 1996', $shows->first()->title);
-        $this->assertSame('1996-02-18', $shows->first()->date->toDateString());
+        $this->assertSame('Royal Rumble 1996', $shows->first()->title);
+        $this->assertSame('1996-01-21', $shows->first()->date->toDateString());
         $this->assertSame('Vengeance 2001', $shows->last()->title);
     }
 
@@ -47,7 +47,7 @@ class WwePpvCatalogSeederTest extends TestCase
             ->whereBetween('date', ['1996-01-01', '2001-12-31'])
             ->count();
 
-        $this->assertSame(80, $count);
+        $this->assertSame(81, $count);
     }
 
     public function test_seeder_does_not_modify_wcw_shows_on_same_date(): void

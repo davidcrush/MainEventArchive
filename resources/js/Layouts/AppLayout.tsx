@@ -1,9 +1,7 @@
 import BrandLogo from '@/Components/BrandLogo';
 import GitHubRepoLink from '@/Components/GitHubRepoLink';
-import { getGlobalSpoilers, setGlobalSpoilers } from '@/hooks/useSpoilers';
 import { Link, usePage } from '@inertiajs/react';
-import { Box, Flex, Switch, Text } from '@chakra-ui/react';
-import { useState } from 'react';
+import { Box, Flex, Text } from '@chakra-ui/react';
 
 export default function AppLayout({
     children,
@@ -12,7 +10,6 @@ export default function AppLayout({
     children: React.ReactNode;
     fullWidth?: boolean;
 }) {
-    const [globalSpoilers, setGlobalSpoilersState] = useState(getGlobalSpoilers());
     const version = usePage().props.app.version;
 
     return (
@@ -75,30 +72,6 @@ export default function AppLayout({
                                 Watchlist
                             </Text>
                         </Link>
-
-                        <Flex align="center" gap={2}>
-                            <Text
-                                fontSize="sm"
-                                color="mea.muted"
-                                display={{ base: 'none', md: 'block' }}
-                                whiteSpace="nowrap"
-                            >
-                                Spoiler Preference
-                            </Text>
-                            <Switch.Root
-                                checked={globalSpoilers}
-                                onCheckedChange={(e) => {
-                                    const enabled = !!e.checked;
-                                    setGlobalSpoilers(enabled);
-                                    setGlobalSpoilersState(enabled);
-                                }}
-                                colorPalette="yellow"
-                                size="md"
-                            >
-                                <Switch.HiddenInput />
-                                <Switch.Control />
-                            </Switch.Root>
-                        </Flex>
                     </Flex>
                 </Flex>
             </Box>
