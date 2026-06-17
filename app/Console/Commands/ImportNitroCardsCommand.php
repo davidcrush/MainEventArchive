@@ -30,8 +30,8 @@ class ImportNitroCardsCommand extends Command
         }
 
         $dryRun = (bool) $this->option('dry-run');
-        $from = $this->option('from') !== null ? (string) $this->option('from') : null;
-        $to = $this->option('to') !== null ? (string) $this->option('to') : null;
+        $from = $this->normalizeDate($this->option('from'), endOfYear: false);
+        $to = $this->normalizeDate($this->option('to'), endOfYear: true);
         $identifier = $this->option('identifier') !== null ? (string) $this->option('identifier') : null;
 
         $this->info(($dryRun ? '[dry run] ' : '')."Importing Nitro match cards from Fandom for {$promotion->name}...");
@@ -72,5 +72,23 @@ class ImportNitroCardsCommand extends Command
         $this->info('Nitro match-card import complete.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Accept either a bare year (YYYY -> Jan 1 / Dec 31) or a full Y-m-d date.
+     */
+    private function normalizeDate(mixed $value, bool $endOfYear): ?string
+    {
+        if ($value === null || (string) $value === '') {
+            return null;
+        }
+
+        $value = (string) $value;
+
+        if (preg_match('/^\d{4}$/', $value) === 1) {
+            return $endOfYear ? "{$value}-12-31" : "{$value}-01-01";
+        }
+
+        return $value;
     }
 }
