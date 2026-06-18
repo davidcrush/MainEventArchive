@@ -15,7 +15,7 @@ React + Inertia + Chakra UI standards for Main Event Archive.
 - One `<h1>` per page (show title)
 - Match list: `<ol>` or `<ul>` with `<li>` per match
 - Use `<article>` for show detail, `<nav>` for browse filters
-- Browse **Platform** filter uses curated show-level `videos.provider` values (`youtube`, `netflix`); default is all platforms (Netflix search fallback on show pages does not affect browse filtering)
+- Browse **Platform** filter: `youtube` uses curated show-level `videos` rows; `netflix` includes published WWE PPVs (show page opens Netflix search for the title)
 - Browse results are paginated; page size defaults to 20 via `BROWSE_PER_PAGE` in [`config/catalog.php`](../../config/catalog.php)
 - Buttons vs links: navigation = `<a>` / Inertia `<Link>`; actions = `<button>`
 

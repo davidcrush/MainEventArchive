@@ -2,12 +2,10 @@
 
 namespace App\Filament\Resources\Shows\RelationManagers;
 
-use App\Services\Streaming\NetflixUrlParser;
 use App\Services\YouTube\YouTubeUrlParser;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -27,30 +25,17 @@ class VideosRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                Select::make('provider')
-                    ->label('Platform')
-                    ->options([
-                        'netflix' => 'Netflix',
-                        'youtube' => 'YouTube',
-                    ])
-                    ->required()
-                    ->default('netflix')
-                    ->live(),
                 TextInput::make('url')
-                    ->label(fn ($get): string => $get('provider') === 'youtube'
-                        ? 'YouTube URL or video ID'
-                        : 'Netflix URL or title ID')
-                    ->helperText(fn ($get): string => $get('provider') === 'youtube'
-                        ? 'Paste a YouTube watch/youtu.be URL or 11-character video ID.'
-                        : 'Paste a Netflix watch/title URL or numeric title ID.')
+                    ->label('YouTube URL or video ID')
+                    ->helperText('Paste a YouTube watch/youtu.be URL or 11-character video ID.')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('title')
                     ->label('Source title (optional)')
                     ->maxLength(255),
                 Toggle::make('is_primary')
-                    ->label('Primary link for this platform')
-                    ->helperText('When multiple links exist for the same platform, the primary link is preferred.')
+                    ->label('Primary link')
+                    ->helperText('When multiple YouTube links exist, the primary link is preferred.')
                     ->default(true),
             ]);
     }
@@ -93,7 +78,7 @@ class VideosRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Add video link')
+                    ->label('Add YouTube link')
                     ->mutateFormDataUsing(fn (array $data): array => $this->mutateVideoFormData($data)),
             ])
             ->recordActions([
@@ -102,7 +87,7 @@ class VideosRelationManager extends RelationManager
                 DeleteAction::make(),
             ])
             ->emptyStateHeading('No videos linked')
-            ->emptyStateDescription('Add Netflix or YouTube links, run videos:import-netflix, or sync YouTube playlists.')
+            ->emptyStateDescription('Add a YouTube link manually or sync YouTube playlists.')
             ->paginated([10, 25, 50]);
     }
 
@@ -112,23 +97,17 @@ class VideosRelationManager extends RelationManager
      */
     private function mutateVideoFormData(array $data): array
     {
-        $provider = (string) ($data['provider'] ?? 'netflix');
-
         try {
-            $reference = match ($provider) {
-                'youtube' => app(YouTubeUrlParser::class)->parse((string) ($data['url'] ?? '')),
-                'netflix' => app(NetflixUrlParser::class)->parse((string) ($data['url'] ?? '')),
-                default => throw new InvalidArgumentException("Unsupported provider [{$provider}]."),
-            };
+            $reference = app(YouTubeUrlParser::class)->parse((string) ($data['url'] ?? ''));
         } catch (InvalidArgumentException $exception) {
             throw $exception;
         }
 
-        $data['provider'] = $provider;
+        $data['provider'] = 'youtube';
         $data['external_id'] = $reference['external_id'];
         $data['url'] = $reference['url'];
         $data['match_id'] = null;
-        $data['embeddable'] = $provider === 'youtube';
+        $data['embeddable'] = true;
         $data['last_verified_at'] = now();
 
         return $data;

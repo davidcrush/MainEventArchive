@@ -124,13 +124,43 @@ class Show extends Model
             ]);
     }
 
+    public function isWwePpvNetflixSearchEligible(): bool
+    {
+        if (! config('streaming.netflix.wwe_ppv_search_enabled', true)) {
+            return false;
+        }
+
+        $this->loadMissing('promotion');
+
+        return $this->show_type === ShowType::Ppv
+            && $this->promotion?->slug === 'wwe';
+    }
+
+    /**
+     * @param  Builder<Show>  $query
+     * @return Builder<Show>
+     */
+    public function scopeWwePpvNetflixSearchEligible(Builder $query): Builder
+    {
+        if (! config('streaming.netflix.wwe_ppv_search_enabled', true)) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query
+            ->where('show_type', ShowType::Ppv)
+            ->whereHas('promotion', fn ($q) => $q->where('slug', 'wwe'));
+    }
+
     /**
      * @param  Builder<Show>  $query
      * @return Builder<Show>
      */
     public function scopeWatchable(Builder $query): Builder
     {
-        return $query->whereHas('videos', fn ($q) => $q->whereNull('match_id'));
+        return $query->where(function (Builder $q) {
+            $q->whereHas('videos', fn ($q) => $q->whereNull('match_id'))
+                ->orWhere(fn (Builder $q) => $q->wwePpvNetflixSearchEligible());
+        });
     }
 
     /**
@@ -139,6 +169,10 @@ class Show extends Model
      */
     public function scopeWithVideoProvider(Builder $query, string $provider): Builder
     {
+        if ($provider === 'netflix') {
+            return $query->wwePpvNetflixSearchEligible();
+        }
+
         return $query->whereHas('videos', fn ($q) => $q
             ->whereNull('match_id')
             ->where('provider', $provider));

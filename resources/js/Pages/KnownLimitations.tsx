@@ -114,11 +114,9 @@ export default function KnownLimitations() {
                             yet.
                         </BulletItem>
                         <BulletItem>
-                            <strong style={{ color: 'white' }}>Netflix</strong> — Many WWE PPVs
-                            open a Netflix <em>search</em> for the show title rather than a direct
-                            episode link, so results may vary. A &quot;Video&quot; badge means we
-                            have a catalog link on file, not a guarantee the title streams in your
-                            region.
+                            <strong style={{ color: 'white' }}>Netflix</strong> — WWE PPVs open a
+                            Netflix search for the show title. Results depend on your region and
+                            Netflix catalog; we do not verify availability.
                         </BulletItem>
                         <BulletItem>
                             Per-match timestamps and in-page playback are planned for a later

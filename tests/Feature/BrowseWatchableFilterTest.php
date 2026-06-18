@@ -107,6 +107,29 @@ class BrowseWatchableFilterTest extends TestCase
         $this->assertDatabaseHas('shows', ['id' => $showWithoutVideo->id]);
     }
 
+    public function test_browse_with_watchable_filter_includes_wwe_ppv_without_youtube_video(): void
+    {
+        $promotion = Promotion::factory()->wwe()->create();
+        $wwePpv = Show::factory()->create([
+            'promotion_id' => $promotion->id,
+            'status' => ShowStatus::Published,
+            'show_type' => ShowType::Ppv,
+            'title' => 'Survivor Series 2001',
+            'slug' => 'survivor-series-2001-watchable',
+            'date' => '2001-11-18',
+        ]);
+
+        $this->get(route('browse', ['watchable' => 1, 'promotion' => 'wwe']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Browse/Index')
+                ->where('filters.watchable', true)
+                ->has('shows.data', 1)
+                ->where('shows.data.0.slug', $wwePpv->slug)
+                ->where('shows.data.0.has_video', true),
+            );
+    }
+
     /**
      * @param  array<string, mixed>  $attributes
      */

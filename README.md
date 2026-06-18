@@ -117,7 +117,7 @@ vendor/bin/sail artisan shows:import wikipedia --promotion=wwe --from=1996 --to=
 vendor/bin/sail artisan videos:sync-youtube-playlist --promotion=wwe --playlist=wwe_ppv --dry-run
 ```
 
-WWE PPV show pages without YouTube show **Watch on Netflix** (search fallback). Optional deep links: save a Netflix browse page as HTML and run `vendor/bin/sail artisan videos:import-netflix --html=... --promotion=wwe --dry-run`, or add links in Filament.
+WWE PPV show pages without YouTube show **Watch on Netflix** (opens Netflix search for the show title). Browse `platform=netflix` includes published WWE PPVs.
 
 Browse at `/browse?promotion=wwe`. Remove `--dry-run` after reviewing matches. See [docs/domain/initial-catalog-seeding.md](docs/domain/initial-catalog-seeding.md).
 

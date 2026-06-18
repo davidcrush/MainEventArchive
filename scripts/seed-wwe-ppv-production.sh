@@ -8,7 +8,7 @@
 #
 # Prerequisites:
 #   - php artisan migrate --force
-#   - docs/third-party/cagematch/*.mhtml and docs/third-party/netflix/*.mhtml on server (from git)
+#   - docs/third-party/cagematch/*.mhtml on server (from git)
 #   - Back up the production database before first run
 
 set -euo pipefail
@@ -54,19 +54,6 @@ run_verify() {
     echo ""
     echo "========== Verify Wikipedia WWE ${from}-${to} =========="
     "${ARTISAN[@]}" shows:verify-wikipedia --promotion=wwe --from="$from" --to="$to" || true
-}
-
-run_netflix_imports() {
-    echo ""
-    echo "========== Netflix catalog import =========="
-    local count=0
-    for f in docs/third-party/netflix/WWE*.mhtml; do
-        [[ -f "$f" ]] || continue
-        echo "--- $(basename "$f") ---"
-        "${ARTISAN[@]}" videos:import-netflix --promotion=wwe --html="$f"
-        count=$((count + 1))
-    done
-    echo "Imported from ${count} Netflix save file(s)."
 }
 
 publish_wwe_ppvs() {
@@ -140,10 +127,7 @@ run_wikipedia 2021 2026 4
 run_venues 2021 2026
 run_verify 2021 2026
 
-# Phase 3 — Netflix video links (browse Video badge + watchable filter)
-run_netflix_imports
-
-# Phase 4 — Publish enriched shows (skips future/incomplete shells)
+# Phase 3 — Publish enriched shows (skips future/incomplete shells)
 publish_wwe_ppvs
 
 echo ""

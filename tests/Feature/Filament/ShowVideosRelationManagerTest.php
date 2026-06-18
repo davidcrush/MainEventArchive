@@ -40,32 +40,6 @@ class ShowVideosRelationManagerTest extends TestCase
             ->assertCanSeeTableRecords([$video]);
     }
 
-    public function test_admin_can_create_netflix_video_from_title_id(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $show = Show::factory()->create(['title' => 'Survivor Series 2001']);
-
-        $this->actingAs($admin);
-
-        Livewire::test(VideosRelationManager::class, [
-            'ownerRecord' => $show,
-            'pageClass' => EditShow::class,
-        ])
-            ->callAction(TestAction::make('create')->table(), data: [
-                'provider' => 'netflix',
-                'url' => '80117477',
-                'title' => 'Survivor Series 2001',
-                'is_primary' => true,
-            ])
-            ->assertHasNoFormErrors();
-
-        $video = Video::query()->first();
-        $this->assertNotNull($video);
-        $this->assertSame('netflix', $video->provider);
-        $this->assertSame('80117477', $video->external_id);
-        $this->assertSame('https://www.netflix.com/watch/80117477', $video->url);
-    }
-
     public function test_admin_can_create_youtube_video_from_watch_url(): void
     {
         $admin = User::factory()->admin()->create();
@@ -78,7 +52,6 @@ class ShowVideosRelationManagerTest extends TestCase
             'pageClass' => EditShow::class,
         ])
             ->callAction(TestAction::make('create')->table(), data: [
-                'provider' => 'youtube',
                 'url' => 'https://www.youtube.com/watch?v=abc12345678',
                 'title' => 'FULL EVENT: Vengeance 2001',
                 'is_primary' => true,
@@ -112,7 +85,6 @@ class ShowVideosRelationManagerTest extends TestCase
         ])
             ->assertCanSeeTableRecords([$video])
             ->callAction(TestAction::make('edit')->table($video), data: [
-                'provider' => 'youtube',
                 'url' => 'https://youtu.be/abc12345678',
                 'title' => 'Updated title',
                 'is_primary' => true,

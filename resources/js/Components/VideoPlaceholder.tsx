@@ -24,16 +24,10 @@ function WatchTargetRow({ target }: { target: WatchTarget }) {
     if (target.provider === 'netflix') {
         return (
             <VStack gap={2}>
-                <NetflixWatchButton url={target.url} mode={target.mode} />
-                {target.mode === 'search' ? (
-                    <Text color="mea.muted" fontSize="sm">
-                        Search Netflix for this event
-                    </Text>
-                ) : (
-                    <Text color="mea.muted" fontSize="sm">
-                        Opens on Netflix.com · new tab
-                    </Text>
-                )}
+                <NetflixWatchButton url={target.url} />
+                <Text color="mea.muted" fontSize="sm">
+                    Search Netflix for this event
+                </Text>
             </VStack>
         );
     }

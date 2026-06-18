@@ -1,27 +1,13 @@
 import { Image, Link } from '@chakra-ui/react';
 import netflixLogo from '../../images/third-party/Netflix_Logo_RGB.png';
 
-function netflixAriaLabel(mode: string): string {
-    if (mode === 'search') {
-        return 'Watch on Netflix (opens search in new tab)';
-    }
-
-    return 'Watch on Netflix (opens title in new tab)';
-}
-
-export default function NetflixWatchButton({
-    url,
-    mode,
-}: {
-    url: string;
-    mode: string;
-}) {
+export default function NetflixWatchButton({ url }: { url: string }) {
     return (
         <Link
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={netflixAriaLabel(mode)}
+            aria-label="Watch on Netflix (opens search in new tab)"
             display="inline-flex"
             alignItems="center"
             justifyContent="center"

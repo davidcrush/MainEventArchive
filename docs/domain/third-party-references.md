@@ -61,38 +61,20 @@ MEA links out to Netflix for full-show viewing; we never embed or host Netflix p
 
 | Mode | When | UX |
 |------|------|-----|
-| **Search fallback** | WWE PPV with no curated Netflix URL, or deep links disabled | "Watch on Netflix" opens Netflix search for the show title; subtitle: "Search Netflix for this event" |
-| **Deep link** | `videos.provider = netflix` row on the show **and** `NETFLIX_DEEP_LINKS_ENABLED=true` | "Watch on Netflix" opens `https://www.netflix.com/watch/{titleId}` |
-
-### Jan 2026 catalog migration (stale deep links)
-
-In January 2026 Netflix became the U.S. home for most WWE PLE/PPV archive content (moved from Peacock). Netflix reorganized many events as **multi-season series** (e.g. one "Royal Rumble" title with a season per year). Pre-migration **title IDs stored in MEA often no longer resolve to the correct year** — `/watch/{id}` may open the latest season (e.g. 2025) instead of the catalog show.
-
-**Default:** `NETFLIX_DEEP_LINKS_ENABLED=false` so show pages use **search fallback** until staff re-import episode-level `video_id` values from saved Netflix series pages (`videos:import-netflix --force`). Set `NETFLIX_DEEP_LINKS_ENABLED=true` only after verifying imports against the post-migration catalog.
+| **Search** | Published WWE PPV (`promotion.slug = wwe`, `show_type = ppv`) | "Watch on Netflix" opens Netflix search for the show title; subtitle: "Search Netflix for this event" |
 
 ### Allowed
 
 - Outbound link buttons on show pages (`rel="noopener noreferrer"`)
-- Staff-entered Netflix URLs in Filament (`videos` table)
-- Staff import from **saved HTML** (browser save of Netflix browse/collection page while logged in):
-
-```bash
-vendor/bin/sail artisan videos:import-netflix --html=storage/app/netflix/wwe-ppv.html --promotion=wwe --dry-run
-```
-
-**Saving tips:** Wait for tiles to load before Ctrl+S. Search pages use `jbv=` IDs (supported); browse/collection pages use `/title/` links. MHTML (Chrome default) and HTML-only both work. Search pages list series without years — for 1996–2001 PPV deep links, save each PPV series detail page (Survivor Series, Royal Rumble, etc.) after scrolling through all available years.
-
-- **Stores:** `provider`, `external_id` (Netflix title ID), `url` only
-- **Does not store:** Netflix synopsis, artwork, availability flags, or regional catalog metadata
-- **Does not overwrite:** existing Netflix rows unless `--force`
+- Browse `platform=netflix` and **Video** badge for published WWE PPVs (search on show page; no stored Netflix URLs)
 
 ### Not allowed / not guaranteed
 
 - Live automated scraping of Netflix (WAF, ToS, regional catalogs)
-- Implying MEA verified a title is available on Netflix when using **search fallback** (best-effort search only)
-- Displaying Netflix availability on browse cards (show page button only for v1.2)
+- Implying MEA verified a title is available on Netflix (best-effort search only)
+- Deep links to `/watch/{titleId}` (Netflix catalog IDs are unstable across reorganizations)
 
-Config: [`config/streaming.php`](../../config/streaming.php) (`NETFLIX_DEEP_LINKS_ENABLED`, `NETFLIX_WWE_PPV_SEARCH_ENABLED`, search URL template).
+Config: [`config/streaming.php`](../../config/streaming.php) (`NETFLIX_WWE_PPV_SEARCH_ENABLED`, search URL template).
 
 ### Brand assets (show page buttons)
 
@@ -134,18 +116,18 @@ See [`docs/architecture/video-providers.md`](../architecture/video-providers.md)
 
 ## Multi-platform “Where to watch”
 
-Shows may have **multiple show-level `videos` rows** — typically one per platform (e.g. Netflix deep link + YouTube full event). The public show page uses `watch_targets[]`, not a single video URL.
+Shows may have **multiple watch targets** on the public show page — typically YouTube (curated `videos` row) plus Netflix search for WWE PPVs. The public show page uses `watch_targets[]`, not a single video URL.
 
 | Layer | Behavior |
 |-------|----------|
-| **Database** | `Show` `hasMany` `Video`; unique on `(provider, external_id)` allows one Netflix row and one YouTube row per show |
-| **Resolver** | [`WatchTargetResolver`](../../app/Services/Streaming/WatchTargetResolver.php) returns YouTube first (when curated), then Netflix deep link or WWE search fallback |
+| **Database** | `Show` `hasMany` `Video` for YouTube (and other curated providers); Netflix uses search URLs derived from show title |
+| **Resolver** | [`WatchTargetResolver`](../../app/Services/Streaming/WatchTargetResolver.php) returns YouTube when curated, then Netflix search for WWE PPVs |
 | **UI** | [`VideoPlaceholder`](../../resources/js/Components/VideoPlaceholder.tsx) renders a button per target side-by-side |
-| **`is_primary`** | Per platform — marks the preferred link when multiple rows share the same `provider` |
+| **`is_primary`** | Per platform — marks the preferred YouTube link when multiple rows share the same `provider` |
 
-Import pipelines are independent: `videos:import-netflix` and `videos:sync-youtube-playlist` upsert their own provider without removing the other.
+YouTube sync: `videos:sync-youtube-playlist` upserts show-level YouTube rows without removing other data.
 
-**Example dual-source show:** `vengeance-2001` (Netflix curated + YouTube link when staff/sync adds one).
+**Example dual-source show:** `vengeance-2001` (YouTube link when synced + Netflix search on show page).
 
 ## Legal note
 

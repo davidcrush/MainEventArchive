@@ -17,7 +17,7 @@ class NetflixWatchUrlResolverTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_returns_search_url_for_wwe_ppv_without_netflix_video(): void
+    public function test_returns_search_url_for_wwe_ppv(): void
     {
         config(['streaming.netflix.wwe_ppv_search_enabled' => true]);
 
@@ -34,55 +34,7 @@ class NetflixWatchUrlResolverTest extends TestCase
         );
     }
 
-    public function test_returns_deep_link_when_netflix_video_exists_and_deep_links_enabled(): void
-    {
-        config(['streaming.netflix.deep_links_enabled' => true]);
-
-        $show = $this->createWwePpv('Survivor Series 2001');
-
-        Video::factory()->create([
-            'show_id' => $show->id,
-            'match_id' => null,
-            'provider' => 'netflix',
-            'external_id' => '80117477',
-            'url' => 'https://www.netflix.com/watch/80117477',
-            'is_primary' => true,
-        ]);
-
-        $target = app(NetflixWatchUrlResolver::class)->resolve($show->fresh());
-
-        $this->assertSame('deep_link', $target->mode);
-        $this->assertSame('https://www.netflix.com/watch/80117477', $target->url);
-    }
-
-    public function test_falls_back_to_search_when_deep_links_disabled_despite_netflix_video(): void
-    {
-        config([
-            'streaming.netflix.deep_links_enabled' => false,
-            'streaming.netflix.wwe_ppv_search_enabled' => true,
-        ]);
-
-        $show = $this->createWwePpv('Survivor Series 2001');
-
-        Video::factory()->create([
-            'show_id' => $show->id,
-            'match_id' => null,
-            'provider' => 'netflix',
-            'external_id' => '80117477',
-            'url' => 'https://www.netflix.com/watch/80117477',
-            'is_primary' => true,
-        ]);
-
-        $target = app(NetflixWatchUrlResolver::class)->resolve($show->fresh());
-
-        $this->assertSame('search', $target->mode);
-        $this->assertSame(
-            'https://www.netflix.com/search?q=Survivor%20Series%202001',
-            $target->url,
-        );
-    }
-
-    public function test_returns_null_for_wcw_ppv_without_netflix_video(): void
+    public function test_returns_null_for_wcw_ppv(): void
     {
         $promotion = Promotion::factory()->wcw()->create();
         $show = Show::factory()->create([
@@ -94,7 +46,7 @@ class NetflixWatchUrlResolverTest extends TestCase
         $this->assertNull(app(NetflixWatchUrlResolver::class)->resolve($show));
     }
 
-    public function test_returns_null_when_search_fallback_disabled(): void
+    public function test_returns_null_when_search_disabled(): void
     {
         config(['streaming.netflix.wwe_ppv_search_enabled' => false]);
 
@@ -120,12 +72,9 @@ class WatchTargetResolverTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_includes_youtube_and_netflix_targets_when_both_exist(): void
+    public function test_includes_youtube_and_netflix_targets_for_wwe_ppv_with_youtube(): void
     {
-        config([
-            'streaming.netflix.wwe_ppv_search_enabled' => true,
-            'streaming.netflix.deep_links_enabled' => true,
-        ]);
+        config(['streaming.netflix.wwe_ppv_search_enabled' => true]);
 
         $show = $this->createWwePpv('Survivor Series 2001');
 
@@ -138,21 +87,16 @@ class WatchTargetResolverTest extends TestCase
             'is_primary' => true,
         ]);
 
-        Video::factory()->create([
-            'show_id' => $show->id,
-            'match_id' => null,
-            'provider' => 'netflix',
-            'external_id' => '80117477',
-            'url' => 'https://www.netflix.com/watch/80117477',
-            'is_primary' => true,
-        ]);
-
         $targets = app(WatchTargetResolver::class)->resolveAll($show->fresh());
 
         $this->assertCount(2, $targets);
         $this->assertSame('youtube', $targets[0]->provider);
         $this->assertSame('netflix', $targets[1]->provider);
-        $this->assertSame('deep_link', $targets[1]->mode);
+        $this->assertSame('search', $targets[1]->mode);
+        $this->assertSame(
+            'https://www.netflix.com/search?q=Survivor%20Series%202001',
+            $targets[1]->url,
+        );
     }
 
     private function createWwePpv(string $title): Show

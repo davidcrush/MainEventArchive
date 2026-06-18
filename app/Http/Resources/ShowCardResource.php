@@ -26,7 +26,7 @@ class ShowCardResource extends JsonResource
             ]),
             'rating_average' => $this->when(isset($this->ratings_avg_stars), round((float) $this->ratings_avg_stars, 1)),
             'rating_count' => $this->when(isset($this->ratings_count), (int) $this->ratings_count),
-            'has_video' => (bool) ($this->has_video ?? false),
+            'has_video' => (bool) ($this->has_video ?? false) || $this->isWwePpvNetflixSearchEligible(),
             'has_card' => (int) ($this->card_match_count ?? 0) > 0,
             'main_event_preview' => $this->when(
                 (int) ($this->card_match_count ?? 0) > 0,
