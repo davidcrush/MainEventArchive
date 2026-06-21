@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'umami' => [
+        'script_url' => env('UMAMI_SCRIPT_URL', 'https://analytics.davidcrush.com/script.js'),
+        'website_id' => env('UMAMI_WEBSITE_ID'),
+    ],
+
 ];
